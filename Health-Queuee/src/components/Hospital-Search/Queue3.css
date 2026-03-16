@@ -1,0 +1,177 @@
+/* --- 1. ปรับแต่ง Modal (Layout) --- */
+.custom-calendar-modal .modal-dialog {
+  max-width: 380px;
+  margin: 1.75rem auto;
+}
+.custom-calendar-modal .modal-content {
+  border-radius: 24px;
+  border: none;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+/* Header สีน้ำเงิน */
+.custom-calendar-modal .modal-header {
+  border-bottom: none;
+  padding: 15px 20px;
+  background-color: #001E6C;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+.custom-calendar-modal .modal-title {
+  font-family: 'Prompt', sans-serif;
+  font-weight: 600;
+  color: white;
+  font-size: 1.1rem;
+  width: 100%;
+  text-align: center;
+}
+
+/* ปุ่มปิดสีขาว */
+.custom-calendar-modal .btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
+  position: absolute;
+  right: 20px;
+  opacity: 0.8;
+}
+.custom-calendar-modal .btn-close:hover {
+  opacity: 1;
+}
+
+.custom-calendar-modal .modal-body {
+  padding: 20px;
+  background-color: #fff;
+}
+
+/* --- 2. ปรับแต่ง Calendar (Grid) --- */
+.react-calendar {
+  width: 100% !important;
+  background: white;
+  border: none;
+  font-family: 'Prompt', sans-serif;
+}
+.react-calendar__navigation {
+  height: 50px;
+  margin-bottom: 10px;
+}
+.react-calendar__navigation button {
+  min-width: 40px;
+  background: none;
+  font-size: 18px;
+  font-weight: 700;
+  color: #001E6C;
+  border-radius: 12px;
+}
+.react-calendar__navigation button:enabled:hover {
+  background-color: #f1f5f9;
+}
+
+/* หัววัน (จ, อ, พ) */
+.react-calendar__month-view__weekdays {
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.9em;
+  color: #94a3b8;
+  margin-bottom: 10px;
+  text-decoration: none !important;
+}
+.react-calendar__month-view__weekdays abbr {
+  text-decoration: none;
+  cursor: default;
+}
+
+/* --- 3. ปรับแต่งปุ่มวันที่ (Tiles) --- */
+.react-calendar__tile {
+  background: none !important;
+  padding: 0 !important;
+  height: 48px;
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  overflow: visible;
+  position: relative;
+  z-index: 1;
+}
+
+/* วงกลมตัวเลข */
+.react-calendar__tile abbr {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 15px;
+  font-weight: 500;
+  color: #334155;
+  transition: all 0.2s;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+
+/* --- 4. States ต่างๆ --- */
+
+/* Hover */
+.react-calendar__tile:enabled:hover abbr {
+  background-color: #dbeafe !important;
+  color: #001E6C !important;
+  font-weight: bold;
+  transform: scale(1.1);
+}
+
+/* Active (วันที่เลือก) */
+.react-calendar__tile--active abbr {
+  background: #001E6C !important;
+  color: white !important;
+  box-shadow: 0 4px 10px rgba(0, 30, 108, 0.3);
+  font-weight: bold;
+}
+.react-calendar__tile--active:enabled:hover abbr {
+  background: #001E6C !important;
+  color: white !important;
+  transform: scale(1.05);
+}
+
+/* ✅ Disabled (วันหยุด/วันจองไม่ได้) - รวมทั้งจาก minDate และ non-working-day */
+.non-working-day abbr,
+.react-calendar__tile:disabled abbr {
+  color: #a0a0a0 !important;       /* สีตัวหนังสือเทาเข้มขึ้นให้อ่านออก */
+  background: #f3f4f6 !important;  /* พื้นหลังสีเทาอ่อน */
+  cursor: not-allowed;
+  pointer-events: none; /* เพิ่ม pointer-events: none ที่นี่เพื่อให้ครอบคลุม */
+}
+
+.non-working-day,
+.react-calendar__tile:disabled {
+  pointer-events: none;
+}
+
+/* --- 5. ไฮไลท์ "วันนี้" (Today) --- */
+
+.react-calendar__tile--now {
+  background: transparent !important;
+}
+
+.react-calendar__tile--now:not(.non-working-day):not(:disabled) abbr {
+  border: 2px solid #ea580c !important;
+  color: #ea580c !important;
+  font-weight: bold;
+}
+
+/* กรณี 2: วันนี้กดจองไม่ได้ (ยังคงเส้นประไว้ แต่พื้นหลังจะเป็นสีเทาตาม class บน) */
+.non-working-day.react-calendar__tile--now abbr,
+.react-calendar__tile--now:disabled abbr {
+  border: 2px dashed #94a3b8 !important;
+  color: #64748b !important;
+  background: #e2e8f0 !important; 
+  opacity: 1 !important;
+  font-weight: bold;
+}
+
+.non-working-day.react-calendar__tile--now::after,
+.react-calendar__tile--now:disabled::after {
+  color: #64748b;
+}

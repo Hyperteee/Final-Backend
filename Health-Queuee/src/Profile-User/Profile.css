@@ -1,0 +1,257 @@
+:root {
+  --bs-primary: #0066cc;
+  --bs-primary-rgb: 0, 102, 204;
+  --bs-success: #7cb342;
+  --bs-success-rgb: 124, 179, 66;
+  --bs-danger: #e91e63;
+  --bs-danger-rgb: 233, 30, 99;
+}
+
+.list-group-item.active {
+  background-color: #e3f2fd;
+  color: var(--bs-primary);
+  border-color: transparent;
+}
+
+.list-group-item.active:hover {
+  background-color: #e3f2fd;
+  color: var(--bs-primary);
+}
+
+/* Sidebar hover effect */
+.list-group-item-action:hover {
+  background-color: #f8f9fa;
+}
+
+/* Form controls focus state */
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--bs-primary);
+  box-shadow: 0 0 0 0.25rem rgba(0, 102, 204, 0.25);
+}
+
+/* Card styling */
+.card {
+  border-radius: 0.5rem;
+}
+
+.card-header {
+  border-radius: 0.5rem 0.5rem 0 0 !important;
+}
+
+/* Button styling */
+.btn-outline-danger {
+  border-width: 2px;
+}
+
+.btn-outline-danger:hover {
+  background-color: #fce4ec;
+  color: var(--bs-danger);
+  border-color: var(--bs-danger);
+}
+
+.btn-success {
+  background-color: var(--bs-success);
+  border-color: var(--bs-success);
+}
+
+.btn-success:hover {
+  background-color: #689f38;
+  border-color: #689f38;
+}
+
+/* Text colors */
+.text-success {
+  color: var(--bs-success) !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 991.98px) {
+  .card-body {
+    padding: 1.5rem !important;
+  }
+}
+
+/* Form label spacing */
+.form-label {
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+/* Static field values (phone, national ID, gender) */
+.fs-5.fw-semibold.text-success {
+  padding: 0.5rem 0;
+  font-size: 1.1rem !important;
+}
+/* --- Container --- */
+.profile-book-container {
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  padding-bottom: 60px;
+}
+
+/* --- Appointment Card --- */
+.appointment-card {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+  margin-bottom: 20px;
+}
+
+.appointment-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 30, 108, 0.1); /* เงาสีน้ำเงินจางๆ */
+  border-color: #b0c4de;
+}
+
+/* --- Card Header (หัวการ์ด) --- */
+.appt-card-header {
+  background-color: #f8fbff; /* สีฟ้าจางๆ */
+  padding: 15px 20px;
+  border-bottom: 1px solid #edf2f7;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.appt-hospital-name {
+  font-weight: 600;
+  color: #001E6C;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* --- Card Body (เนื้อหา) --- */
+.appt-card-body {
+  padding: 20px;
+}
+
+.doctor-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+}
+
+.doctor-avatar-small {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-color: #eef2ff;
+  color: #001E6C;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+/* --- Date Section --- */
+.date-box {
+  background-color: #fff;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 12px;
+  height: 100%;
+}
+
+.date-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 0.95rem;
+}
+
+.date-row:last-child {
+  margin-bottom: 0;
+}
+
+.label-p1 {
+  color: #001E6C;
+  font-weight: 600;
+  background-color: #e0f2fe;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+.label-p2 {
+  color: #64748b;
+  font-weight: 600;
+  background-color: #f1f5f9;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+/* --- Symptom Box --- */
+.symptom-box {
+  background-color: #fafafa;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 15px;
+  border-left: 4px solid #cbd5e1;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+/* --- Status Badge Custom --- */
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-new { background-color: #ffe15a; color: #c2410c; border: 1px solid #ffedd5; }
+.status-confirmed { background-color: #f0fdf4; color: #15803d; border: 1px solid #dcfce7; }
+.status-failed { background-color: #fef2f2; color: #b91c1c; border: 1px solid #fee2e2; }
+
+/* --- Action Footer --- */
+.appt-card-footer {
+  padding: 15px 20px;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+
+.appointment-card {
+  background: white;
+}
+
+.appointment-card.card-inactive {
+  opacity: 0.75;            
+  background-color: #f9fafb; 
+  border-color: #f3f4f6;   
+  box-shadow: none;      
+}
+
+.appointment-card.card-inactive:hover {
+  transform: none;       
+  box-shadow: none;
+  border-color: #e5e7eb;
+}
+
+.card-inactive .appt-card-header {
+  background-color: #f3f4f6;
+  color: #9ca3af;
+  border-bottom-color: #e5e7eb;
+}
+
+.card-inactive .appt-hospital-name {
+  color: #6b7280; 
+}
+
+.card-inactive .doctor-avatar-small {
+  filter: grayscale(100%);
+  opacity: 0.6;
+}
