@@ -1,0 +1,199 @@
+.option {
+  width: auto;
+  min-width: 480px;
+  max-width: 100%;
+  
+  height: 90px;
+  padding: 18px 25px;
+  border-radius: 18px;
+  background-color: #FFFFFF;
+  color: #001E6C;
+  font-weight: 600; 
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  transition: all 0.3s ease;
+  font-size: 1.1rem;
+  box-shadow: 0 6px 20px rgba(0, 30, 108, 0.08); 
+  border: 1px solid #E6ECFF; 
+  cursor: pointer;
+}
+
+.option:hover {
+  background-color: #F7F9FF;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 30, 108, 0.15);
+}
+
+.option-active {
+  border: 2px solid #001E6C;
+  background-color: #E6ECFF;
+  color: #001E6C;
+  box-shadow: 0 0 0 3px rgba(0, 30, 108, 0.2), 0 6px 20px rgba(0, 30, 108, 0.1);
+}
+
+.option-department {
+  background: #ffffff;
+  border: 1px solid #E6ECFF; /* ใช้ border ที่อ่อนลง */
+  border-radius: 12px;
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* เพิ่มเงาอ่อนๆ */
+  color: #333;
+  font-weight: 500;
+}
+
+.option-department:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 30, 108, 0.1);
+}
+
+.option-department img {
+  width: 45px;
+  height: 45px;
+  margin-right: 15px;
+}
+
+.zone-option .d-flex.flex-wrap {
+    gap: 20px; /* เพิ่ม gap ระหว่าง option */
+}
+
+.department-modal .modal-content {
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(0, 30, 108, 0.2); /* Shadow ด้วยสีธีม */
+  border: none;
+}
+
+.department-modal .modal-header {
+  background-color: #001E6C; 
+  color: #fff;
+  border-bottom: none;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+.department-modal .modal-title {
+  font-weight: 700;
+  font-size: 1.5rem; 
+  text-align: center;
+  width: 100%;
+}
+
+.department-modal .btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%); 
+  position: absolute;
+  right: 20px;
+}
+
+.department-grid-container {
+    padding: 20px 30px; 
+}
+
+.department-instruction {
+    font-size: 0.95rem;
+    font-style: italic;
+    color: #6c757d !important;
+}
+
+.department-grid-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); 
+  gap: 20px;
+}
+
+.option-department {
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.option-department:hover {
+  border-color: #001E6C; 
+  background-color: #f7f9ff;
+  box-shadow: 0 8px 20px rgba(0, 30, 108, 0.15); 
+  transform: translateY(-5px);
+}
+
+.option-department img {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+  margin-bottom: 12px;
+}
+
+.default-icon-placeholder {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.option-department span {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+/* ------------------------------------------------------------------- */
+/* 1. Base Footer and Color Scheme (Navy Blue) */
+/* ------------------------------------------------------------------- */
+.custom-footer {
+  background-color: #001E6C; /* Navy Blue: สีหลักของ Healthcare */
+  color: #E0E7FF; /* Light Blue/White Text */
+  font-family: 'Prompt', sans-serif; /* แนะนำให้ใช้ Font ที่เป็นมิตร */
+}
+
+/* ------------------------------------------------------------------- */
+/* 2. Headings and Links */
+/* ------------------------------------------------------------------- */
+.custom-footer h4, .custom-footer h5 {
+  color: #FFFFFF;
+  font-weight: 600;
+  border-left: 3px solid #4A90E2; /* Accent line for headings */
+  padding-left: 10px;
+  margin-left: -10px; /* ชดเชย padding */
+}
+
+.custom-footer a {
+  color: #B4C4FF; /* Link Color: ดูสว่างขึ้นบนพื้นหลังมืด */
+  transition: color 0.2s ease-in-out;
+  text-decoration: none; /* ลบขีดเส้นใต้ */
+}
+
+.custom-footer a:hover {
+  color: #FFFFFF; /* Hover Color: เปลี่ยนเป็นสีขาว */
+  text-decoration: underline;
+}
+
+.social-icons a {
+  color: #4A90E2; /* Icon Color */
+  font-size: 1.5rem;
+  transition: color 0.2s ease-in-out, transform 0.2s ease-in-out;
+}
+
+.social-icons a:hover {
+  color: #FFFFFF;
+  transform: translateY(-2px);
+}
+
+.contact-list i {
+  color: #4A90E2; /* Icon Color */
+  margin-right: 8px;
+  font-size: 1.1rem;
+}

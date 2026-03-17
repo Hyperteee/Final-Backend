@@ -1,0 +1,36 @@
+# docker compose -f docker-compose-mysql-phpmyadmin.yaml up -d
+# docker compose -f docker-compose-mysql-phpmyadmin.yaml down
+
+networks:
+  healthq-network:
+    name: healthq-network
+
+services:
+  mysql:
+    image: mysql
+    container_name: healthq-db
+    restart: always
+    ports:
+      - 3306:3306
+    volumes:
+       - ./mysql-data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+#      MYSQL_USER: user
+#      MYSQL_PASSWORD: user
+#      MYSQL_DATABASE: data
+    networks:
+      - healthq-network
+      
+  phpmyadmin:
+    image: phpmyadmin
+    container_name: healthq-phpmyadmin
+    restart: always
+    ports:
+      - 8080:80
+    environment:
+      PMA_HOSTS: healthq-db
+#      PMA_USER: root
+#      PMA_PASSWORD: root
+    networks:
+      - healthq-network

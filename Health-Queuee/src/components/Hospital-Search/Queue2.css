@@ -1,0 +1,98 @@
+.doctor-results-panel {
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  border: none;
+  box-shadow: none;
+  margin: auto;
+  margin-bottom: 2.25rem;
+  width: 70%;
+  justify-content: center;
+}
+
+.doctor-card {
+  border-radius: 30px;
+  border: 1px solid rgba(209, 219, 255, 0.65) !important;
+  box-shadow: 0 14px 30px rgba(5, 7, 20, 0.28);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  background: radial-gradient(circle at top, #ffffff 0%, #f6f7ff 55%, #eef1ff 100%);
+}
+
+.doctor-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 30px 38px rgba(5, 7, 20, 0.4);
+}
+
+.doctor-card__avatar {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #536dff, #7b89ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  box-shadow: 0 14px 30px rgba(83, 109, 255, 0.35);
+}
+
+.doctor-card__body p {
+  margin-bottom: 0.4rem;
+}
+
+.doctor-card__subtitle {
+  color: #7a7f92;
+  font-size: 0.9rem;
+}
+
+.doctor-card__hospital {
+  color: #5c6280;
+  font-size: 0.85rem;
+}
+
+.doctor-card__slot {
+  background: linear-gradient(135deg, rgba(85, 113, 255, 0.12), rgba(160, 172, 255, 0.22));
+  color: #3c448e;
+  border-radius: 16px;
+  border: 1px solid rgba(82, 106, 255, 0.2);
+}
+
+.doctor-card__actions button {
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.doctor-card__actions .btn-outline-secondary {
+  border-color: rgba(91, 97, 122, 0.4);
+  color: #4b4f65;
+}
+
+.doctor-pagination {
+  position: sticky;
+  bottom: 32px;
+  margin-top: 2.5rem;
+}
+
+.doctor-pagination__panel {
+  border-radius: 24px;
+  backdrop-filter: blur(14px);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.doctor-pagination__panel .btn {
+  border-radius: 999px;
+  font-weight: 600;
+  padding: 0.75rem 0;
+}
+
+.doctor-pagination__panel .btn-outline-secondary {
+  border-color: rgba(86, 94, 126, 0.4);
+  color: #4a5166;
+}
+
+.doctor-empty {
+  color: rgba(255, 255, 255, 0.8);
+}
