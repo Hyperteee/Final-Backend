@@ -23,3 +23,22 @@ export const getAppointmentsData = async () => {
   const result = await query(sql);
   return result;
 };
+
+export const getSpecialtiesData = async () => {
+  // ดึงข้อมูลจากตาราง specialties จากฐานข้อมูล
+  const sql = "SELECT * FROM specialties";
+  const result = await query(sql);
+  return result;
+};
+
+export const getDoctorsData = async () => {
+  const sql = "SELECT * FROM doctors";
+  const result = await query(sql);
+  return result;
+};
+
+export const getHospitalData = async () => {
+  const sql = "SELECT * FROM hospitals";
+  const result = await query(sql);
+  return result;
+};
