@@ -5,7 +5,7 @@
   "main": "./src/app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start" : "nodemon --ignore ./databases ./src/app.js"
+    "start": "nodemon --ignore ./databases ./src/app.js"
   },
   "keywords": [],
   "author": "",
@@ -17,9 +17,9 @@
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
-    "mysql2": "^3.17.1"
+    "mysql2": "^3.20.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.11"
+    "nodemon": "^3.1.14"
   }
 }

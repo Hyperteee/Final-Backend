@@ -3,10 +3,11 @@ import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 
 dotenv.config();
+
 const config = {
   host: process.env.DB_host,
   user: process.env.DB_user,
-  port: 3307,
+  port: process.env.DB_port,
   password: process.env.DB_pass,
   database: process.env.DB_data,
 };
@@ -22,8 +23,8 @@ export const selectAllUsers = async (role) => {
   FROM users, roles
   WHERE users.role_id = roles.id`;
 
-  if (role == "Manager") {
-    sql += ` AND roles.name != 'Admin'`;
+  if (role == "Admin") {
+    sql += ` AND roles.name != 'SuperAdmin'`;
   }
   const result = await query(sql);
   return result;

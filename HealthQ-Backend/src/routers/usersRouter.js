@@ -93,11 +93,11 @@ userRouter.get("/list", jwtTokenMiddleware, async (req, res) => {
     const result = await getRoleNamebyUserId(req.userId);
     console.log(result[0].role);
     const role = result[0].role;
-    if (role === "Admin" || role === "Manager") {
+    if (role === "Super Admin" || role === "Admin") {
       const users = await selectAllUsers(role);
       return res.status(200).json(users);
     } else {
-      return res.status(403).json({ message: "You not Admin bro" });
+      return res.status(403).json({ message: "You are not Admin" });
     }
   } catch (err) {
     console.log(err);

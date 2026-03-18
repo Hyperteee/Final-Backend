@@ -257,8 +257,8 @@ import chulaSchedule from "./chula/chulaSchedule";
 import synphaet from "./synphaet/synphaet";
 import synphaetSchedule from "./synphaet/synphaetSchedule";
 
-import phyathai from "./phyathai/phyathai";
-import phyathaiSchedule from "./phyathai/phyathaiSchedule";
+// import phyathai from "./phyathai/phyathai";
+// import phyathaiSchedule from "./phyathai/phyathaiSchedule";
 
 import bumrungrad from "./bumrungrad/bumrungrad";
 import bumrungradSchedule from "./bumrungrad/bumrungradSchedule";
