@@ -12,8 +12,6 @@ import hospitalData from "../src/data/listhospital";
 import { UserAppointment } from "../src/data/context/appointment";
 import * as XLSX from "xlsx";
 
-import { useTranslation } from "react-i18next";
-
 // --- Helper Component: Highlight Text ---
 const HighlightText = ({ text, highlight }) => {
   if (!highlight) return <span>{text}</span>;
@@ -519,7 +517,7 @@ export default function AdminExport() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "BatchExport");
 
-    const now = new Date();
+    // const now = new Date();
     // const filename = `BatchExport-${now.toISOString().slice(0, 10)}.xlsx`;
     // XLSX.writeFile(wb, filename);
 

@@ -28,7 +28,7 @@ import ProfileHistory from "./Profile-User/Profile-History";
 import ProfilePrivacy from "./Profile-User/Profile-Privacy";
 import DoctorList from "./Doctor-List/Doctor-List";
 import Layout from "./components/Layout/Layout";
-import PackagePage from "./components/aom/PackagePage";
+// import PackagePage from "./components/aom/PackagePage";
 function App() {
   return (
     <HospitalScheduleProvider>
@@ -51,7 +51,6 @@ function App() {
             <Route path="profilePrivacy" element={<ProfilePrivacy />} />
             <Route path="doctors" element={<DoctorList />} />
             <Route path="chatbot" element={<ChatBot/> } />
-            <Route path="packages" element={<PackagePage/> } />
           </Route>
 
           <Route>

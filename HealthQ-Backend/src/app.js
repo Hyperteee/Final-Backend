@@ -3,7 +3,7 @@ import cors from 'cors'
 import userRouter from './routers/usersRouter.js'
 import dataRouter from './routers/dataRouter.js'
 
-const host = 'localhost'
+const host = '172.24.112.1'
 const port = '3000'
 
 const app = express()
