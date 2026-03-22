@@ -1,6 +1,6 @@
 import express, { Router } from 'express'
 import cors from 'cors'
-import nodemailer from 'nodemailer' // เปลี่ยนเป็นแบบนี้ครับ
+import nodemailer from 'nodemailer' 
 import userRouter from './routers/usersRouter.js'
 import mailRouter from './routers/mailRouter.js';
 
@@ -10,9 +10,10 @@ const port = '3000'
 
 const app = express()
 
-app.use(cors())
+
+
 app.use(express.json())
-app.use(Router)
+app.use(cors())
 app.use(userRouter)
 app.use('/mail', mailRouter);
 
