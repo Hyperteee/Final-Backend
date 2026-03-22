@@ -5,12 +5,30 @@ import userRouter from './routers/usersRouter.js'
 import mailRouter from './routers/mailRouter.js';
 
 
-const host = 'localhost'
-const port = '3000'
+import swaggerUi from 'swagger-ui-express';
+import swaggerJsDoc from 'swagger-jsdoc';
 
-const app = express()
+const host = 'localhost';
+const port = '3000';
 
-// const UserRouter = Router()
+const app = express();
+
+const swaggerOptions = {
+  swaggerDefinition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'HealthQ API',
+      version: '1.0.0',
+      description: 'API documentation for HealthQ application'
+    },
+    servers: [
+      { url: `http://${host}:${port}` }
+    ]
+  },
+  apis: ['./src/routers/*.js'], 
+};
+const swaggerDocs = swaggerJsDoc(swaggerOptions);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 
 

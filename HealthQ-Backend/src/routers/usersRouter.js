@@ -18,6 +18,43 @@ import {
 
 const userRouter = express.Router();
 
+/**
+ * @swagger
+ * /users/register:
+ *   post:
+ *     summary: Register a new user
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - password
+ *               - identificationNumber
+ *             properties:
+ *               title: { type: string }
+ *               name: { type: string }
+ *               lastname: { type: string }
+ *               gender: { type: string }
+ *               identificationNumber: { type: string }
+ *               phone: { type: string }
+ *               birthDate: { type: string, format: date }
+ *               nationality: { type: string }
+ *               email: { type: string, format: email }
+ *               username: { type: string }
+ *               password: { type: string }
+ *     responses:
+ *       201:
+ *         description: User successfully registered
+ *       400:
+ *         description: Incomplete data or username/email already exists
+ *       500:
+ *         description: Server error
+ */
 // --- Register Route ---
 userRouter.post("/register", async (req, res) => {
   try {
@@ -61,6 +98,44 @@ userRouter.post("/register", async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /users/login:
+ *   post:
+ *     summary: Login user
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - password
+ *             properties:
+ *               username: { type: string, description: "Username or Email" }
+ *               email: { type: string, description: "Username or Email" }
+ *               password: { type: string }
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message: { type: string }
+ *                 token: { type: string }
+ *                 data: { type: object }
+ *       400:
+ *         description: Missing credentials
+ *       401:
+ *         description: Invalid password
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Server error
+ */
 // --- Login Route ---
 userRouter.post("/login", async (req, res) => {
   try {
@@ -108,6 +183,32 @@ userRouter.post("/login", async (req, res) => {
 }
 });
 
+/**
+ * @swagger
+ * /users/all:
+ *   get:
+ *     summary: Get all users with formatted roles
+ *     tags: [Users]
+ *     responses:
+ *       200:
+ *         description: A list of users
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   userId: { type: integer }
+ *                   name: { type: string }
+ *                   lastname: { type: string }
+ *                   email: { type: string }
+ *                   role_id: { type: integer }
+ *                   role: { type: string }
+ *                   status: { type: string }
+ *       500:
+ *         description: Server error
+ */
 // --- Get All Users Route ---
 userRouter.get("/all", async (req, res) => {
   try {
@@ -141,6 +242,38 @@ userRouter.get("/all", async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /users/{id}/role:
+ *   put:
+ *     summary: Update user role and status
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The user ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - role_id
+ *             properties:
+ *               role_id: { type: integer }
+ *               status: { type: string }
+ *     responses:
+ *       200:
+ *         description: User role updated successfully
+ *       400:
+ *         description: Missing role_id
+ *       500:
+ *         description: Server error
+ */
 // --- Update User Role Route ---
 userRouter.put("/:id/role", async (req, res) => {
   try {
@@ -159,6 +292,25 @@ userRouter.put("/:id/role", async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /users/{id}:
+ *   delete:
+ *     summary: Delete a user by ID
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The user ID
+ *     responses:
+ *       200:
+ *         description: User deleted successfully
+ *       500:
+ *         description: Server error
+ */
 // --- Delete User Route ---
 userRouter.delete("/:id", async (req, res) => {
   try {

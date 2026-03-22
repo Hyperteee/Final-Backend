@@ -6,6 +6,32 @@ dotenv.config();
 const mailRouter = express.Router();
 
 
+/**
+ * @swagger
+ * /mail/send-email:
+ *   post:
+ *     summary: Send an email notification
+ *     tags: [Mail]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - to
+ *             properties:
+ *               to: { type: string, format: email, description: "Recipient email address" }
+ *               subject: { type: string, description: "Email subject" }
+ *               text: { type: string, description: "Email text body" }
+ *     responses:
+ *       200:
+ *         description: Email sent successfully
+ *       400:
+ *         description: Missing recipient email
+ *       500:
+ *         description: Error sending email
+ */
 mailRouter.post("/send-email", async (req, res) => { 
     console.log("ได้รับข้อมูลแล้ว:", req.body);
     
