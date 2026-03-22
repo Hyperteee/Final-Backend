@@ -49,7 +49,13 @@ const Queue3 = () => {
 
   const currentHospitalSchedule = hospitalSchedules[selectedHospital] || [];
   const departmentSchedule = currentHospitalSchedule.find(
-    (dep) => dep.departmentId === currentDepartmentId
+    (dep) => {
+      if (dep.departmentId === currentDepartmentId) return true;
+      const suffix = `-D${String(currentDepartmentId).padStart(2, '0')}`;
+      return typeof currentDepartmentId === 'number' || !isNaN(currentDepartmentId) 
+        ? dep.departmentId.endsWith(suffix) 
+        : false;
+    }
   );
 
   const selectedDepartmentData =
@@ -87,25 +93,27 @@ const Queue3 = () => {
 
   function isDoctorWorking(date) {
     const dayName = getThaiDayName(date);
-    if (departmentSchedule) {
-      return departmentSchedule.workingDays?.includes(dayName);
+    let workingDays = ["จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์", "อาทิตย์"];
+    
+    if (departmentSchedule && Array.isArray(departmentSchedule.workingDays)) {
+      workingDays = departmentSchedule.workingDays;
     }
-    return false;
+    
+    return workingDays.includes(dayName);
   }
 
   const getMinDate = () => {
     const today = new Date();
+    today.setHours(0, 0, 0, 0); // ensure midnight for strict day comparison
     const minBookingDate = new Date(today);
-    // ต้องจองล่วงหน้าอย่างน้อย 7 วัน
     minBookingDate.setDate(today.getDate() + 7);
 
     if (activeField === "P1") return minBookingDate;
 
-    // วันรอง P2 ต้องห่างจาก P1 อย่างน้อย 3 วัน
     if (activeField === "P2" && priority1Date) {
       const minP2Date = new Date(priority1Date);
-      minP2Date.setDate(priority1Date.getDate() + 3);
-      // ต้องไม่ต่ำกว่าวันจองขั้นต่ำ 7 วันด้วย (กรณี P1 เลือกวันสุดท้ายที่ทำได้)
+      minP2Date.setHours(0, 0, 0, 0);
+      minP2Date.setDate(minP2Date.getDate() + 3);
       return minP2Date > minBookingDate ? minP2Date : minBookingDate;
     }
     return minBookingDate;
@@ -156,8 +164,7 @@ const Queue3 = () => {
   const currentStep = 3;
   const isStepActive = (stepNumber) => stepNumber <= currentStep;
 
-
-  console.log("hospitalMap[].schedule:", hospitalMap[selectedHospital].schedule);
+  console.log("hospitalMap[].schedule:", hospitalMap[selectedHospital]?.schedule);
   console.log("hospitalSchedules['']:", hospitalSchedules[selectedHospital]);
 
   return (

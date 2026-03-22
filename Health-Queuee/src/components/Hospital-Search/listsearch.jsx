@@ -184,6 +184,45 @@ export default function Listsearch() {
   const [openFilterPanel, setOpenFilterPanel] = useState(false);
   const userLocation = { lat: 13.8591, lng: 100.5616 };
   const [selectedHospital, setSelectedHospital] = useState(null);
+  const [backendHospitals, setBackendHospitals] = useState(hospitalData);
+
+  useEffect(() => {
+    fetch("http://127.0.0.1:3000/data/getHospital")
+      .then(res => res.json())
+      .then(data => {
+        if (data.message === "Success" && data.hospitals) {
+          const merged = data.hospitals.map(dbHosp => {
+            const staticHosp = hospitalData.find(h => h.name === dbHosp.name) || {
+              stars: 4.5,
+              reviews: 100,
+              location: { lat: 13.8, lng: 100.5 }
+            };
+            let mappedType = dbHosp.type || staticHosp.type || "โรงพยาบาลรัฐ";
+            if (mappedType.includes("เอกชน")) {
+              mappedType = "โรงพยาบาลเอกชน";
+            } else if (
+              mappedType.includes("รัฐ") ||
+              mappedType.includes("มหาวิทยาลัย") ||
+              mappedType.includes("ศูนย์การแพทย์")
+            ) {
+              mappedType = "โรงพยาบาลรัฐ";
+            }
+
+            return {
+              ...staticHosp,
+              id: dbHosp.id,
+              hospital_id: dbHosp.hospital_id,
+              name: dbHosp.name,
+              type: mappedType,
+              state: dbHosp.state || staticHosp.state,
+              district: dbHosp.district || staticHosp.district,
+            };
+          });
+          setBackendHospitals(merged);
+        }
+      })
+      .catch(err => console.error("Error fetching hospitals:", err));
+  }, []);
 
   function getDistance(lat1, lng1, lat2, lng2) {
     const kmPerDegreeLat = 111;
@@ -218,7 +257,7 @@ export default function Listsearch() {
   }
 
   const filteredHospitalList = useMemo(() => {
-    let hospitals = hospitalData
+    let hospitals = backendHospitals
       .filter((hospital) => {
         const matchesState = hospital.state === stateValue;
         const matchesType = selectedHospitalType.includes(hospital.type);
@@ -260,6 +299,7 @@ export default function Listsearch() {
     selectedTag,
     BTSstations,
     userLocation,
+    backendHospitals,
   ]);
 
   const handleTypeToggle = (type) => {
@@ -326,12 +366,11 @@ export default function Listsearch() {
     });
   }
 
-  // /////////////     Dropdown แสดงค่าอะไร      ////////////////////////////////////
   const filteredStates = stateData.filter((s) =>
     s.toLowerCase().includes(letterSearch.toLowerCase())
   );
 
-  const filteredHospitalsDropdown = hospitalData
+  const filteredHospitalsDropdown = backendHospitals
     .filter(
       (h) =>
         h.name.toLowerCase().includes(letterSearch.toLowerCase()) ||
@@ -389,7 +428,7 @@ export default function Listsearch() {
                 key={type}
                 label={type}
                 count={
-                  hospitalData.filter(
+                  backendHospitals.filter(
                     (h) => h.type === type && h.state === stateValue
                   ).length
                 }
@@ -412,7 +451,7 @@ export default function Listsearch() {
                   wrapperClass="ms-3"
                   label={`${starValue}+ ขึ้นไป`}
                   count={
-                    hospitalData.filter(
+                    backendHospitals.filter(
                       (h) => h.stars >= starValue && h.state === stateValue
                     ).length
                   }

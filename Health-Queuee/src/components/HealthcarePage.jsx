@@ -112,8 +112,34 @@ export default function HealthcarePage() {
   const DARK_BLUE = "#020A1B";
 
   const DOCTORS_PER_SLIDE = 4;
-  const allDoctors = useMemo(() => getTopDoctors(12), []);
-  const totalSlides = Math.ceil(allDoctors.length / DOCTORS_PER_SLIDE);
+  const [allDoctors, setAllDoctors] = useState([]);
+
+  useEffect(() => {
+    Promise.all([
+      fetch("http://127.0.0.1:3000/data/getDoctors").then(res => res.json()),
+      fetch("http://127.0.0.1:3000/data/getSpecialties").then(res => res.json())
+    ])
+    .then(([docsData, specsData]) => {
+      if (docsData.message === "Success" && docsData.doctors) {
+        const specsMap = {};
+        if (specsData.message === "Success" && specsData.specialties) {
+          specsData.specialties.forEach(sp => {
+            specsMap[sp.id] = sp.name;
+          });
+        }
+
+        const formatted = docsData.doctors.map(d => ({
+          id: d.id,
+          name: `${d.prefix ? d.prefix + ' ' : ''}${d.first_name} ${d.last_name}`,
+          specialization: d.specialization || specsMap[d.specialty_id] || "ไม่ระบุแผนก",
+        }));
+        setAllDoctors(formatted.slice(0, 12));
+      }
+    })
+    .catch(err => console.error("Error fetching data:", err));
+  }, []);
+
+  const totalSlides = Math.ceil(allDoctors.length / DOCTORS_PER_SLIDE) || 1;
   const currentDoctors = allDoctors.slice(
     currentOrgSlide * DOCTORS_PER_SLIDE,
     (currentOrgSlide + 1) * DOCTORS_PER_SLIDE
@@ -149,8 +175,16 @@ export default function HealthcarePage() {
     return "unknown";
   };
 
-  const getDoctorAvatarPath = (name = "") => {
-    const gender = detectDoctorGender(name);
+  const getDoctorAvatarPath = (doctor) => {
+    if (!doctor) return "";
+    let gender = detectDoctorGender(doctor.name);
+    
+    // Fallback based on ID to create a realistic mock distribution
+    // since the database lacks a gender column and prefix is NULL.
+    if (gender === "unknown" && doctor.id) {
+      gender = (doctor.id % 2 === 0) ? "female" : "male";
+    }
+    
     return DOCTOR_AVATAR_PATHS[gender] ?? "";
   };
 
@@ -347,11 +381,10 @@ export default function HealthcarePage() {
 
           <div className="row g-4 mb-4">
             {currentDoctors.map((doctor) => {
-              const avatarPath = getDoctorAvatarPath(doctor.name);
+              const avatarPath = getDoctorAvatarPath(doctor);
               const avatarSrc = avatarPath ? resolveAssetPath(avatarPath) : "";
-              const avatarClassName = `rounded-4 mb-3 d-flex align-items-center justify-content-center overflow-hidden${
-                avatarSrc ? "" : " bg-light"
-              }`;
+              const avatarClassName = `rounded-4 mb-3 d-flex align-items-center justify-content-center overflow-hidden${avatarSrc ? "" : " bg-light"
+                }`;
               return (
                 <div key={doctor.id} className="col-sm-6 col-lg-3">
                   <div

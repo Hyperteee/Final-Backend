@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAllDoctors } from "../utils/doctorUtils";
 import "./DoctorList.css";
@@ -10,7 +10,8 @@ const ALL_DEPARTMENTS = "All departments";
 const ALL_HOSPITALS = "All hospitals";
 const DOCTOR_AVATAR_PATHS = {
   male: "images/Doctor-Boy.jpg",
-  female: "images/Doctor-Girl.jpg",};
+  female: "images/Doctor-Girl.jpg",
+};
 const MALE_MARKERS = ["นพ.", "นายแพทย์", "dr.", "mr.", "sir"];
 const FEMALE_MARKERS = ["พญ.", "แพทย์หญิง", "นางแพทย์", "mrs.", "ms.", "madam"];
 
@@ -36,14 +37,60 @@ const detectDoctorGender = (name = "") => {
   return "unknown";
 };
 
-const getDoctorAvatarPath = (name = "") => {
-  const gender = detectDoctorGender(name);
+const getDoctorAvatarPath = (doctor) => {
+  if (!doctor) return "";
+  let gender = detectDoctorGender(doctor.name);
+  if (gender === "unknown" && doctor.id) {
+    gender = (doctor.id % 2 === 0) ? "female" : "male";
+  }
   return DOCTOR_AVATAR_PATHS[gender] ?? "";
 };
 
 export default function DoctorList() {
   const navigate = useNavigate();
-  const doctorPool = useMemo(() => getAllDoctors(), []);
+  const [doctorPool, setDoctorPool] = useState([]);
+
+  useEffect(() => {
+    const allStaticDoctors = getAllDoctors();
+    Promise.all([
+      fetch("http://127.0.0.1:3000/data/getDoctors").then(res => res.json()),
+      fetch("http://127.0.0.1:3000/data/getSpecialties").then(res => res.json()),
+      fetch("http://127.0.0.1:3000/data/getHospital").then(res => res.json())
+    ])
+      .then(([docsData, specsData, hospData]) => {
+        if (docsData.message === "Success" && docsData.doctors) {
+          const specsMap = {};
+          if (specsData.message === "Success" && specsData.specialties) {
+            specsData.specialties.forEach(sp => {
+              specsMap[sp.id] = sp.name;
+            });
+          }
+
+          const hospMap = {};
+          if (hospData.message === "Success" && hospData.hospitals) {
+            hospData.hospitals.forEach(h => {
+              hospMap[h.hospital_id] = h.name;
+            });
+          }
+
+          const merged = docsData.doctors.map(dbDoc => {
+            const name = `${dbDoc.prefix ? dbDoc.prefix + ' ' : ''}${dbDoc.first_name} ${dbDoc.last_name}`.trim();
+            const staticDoc = allStaticDoctors.find(d => d.name === name) || {};
+            
+            return {
+              ...staticDoc,
+              id: dbDoc.id,
+              name: name,
+              specialization: dbDoc.specialization || staticDoc.specialization || specsMap[dbDoc.specialty_id] || "แพทย์ทั่วไป",
+              dept: staticDoc.dept || specsMap[dbDoc.specialty_id] || "ทั่วไป",
+              hospital: staticDoc.hospital || hospMap[dbDoc.hospital_id] || "โรงพยาบาล",
+            };
+          });
+          setDoctorPool(merged);
+        }
+      })
+      .catch(err => console.error("Error fetching data:", err));
+  }, []);
 
   const departmentOptions = useMemo(() => {
     const names = doctorPool
@@ -183,7 +230,7 @@ export default function DoctorList() {
                     4: "doctor-card__rank doctor-card__rank--default",
                   };
                   const rankClass = rankClassMap[rank];
-                  const avatarPath = getDoctorAvatarPath(doctor.name);
+                  const avatarPath = getDoctorAvatarPath(doctor);
                   const avatarSrc = avatarPath ? resolveAssetPath(avatarPath) : "";
                   const avatarClassName = `doctor-card__avatar${avatarSrc ? " doctor-card__avatar--image" : ""}`;
                   return (
@@ -259,7 +306,7 @@ export default function DoctorList() {
             <button type="button" className="doctor-profile-modal__close btn-close" aria-label="Close profile" onClick={handleCloseProfile} />
             <div className="doctor-profile-modal__header">
               {(() => {
-                const avatarPath = getDoctorAvatarPath(selectedDoctor.name);
+                const avatarPath = getDoctorAvatarPath(selectedDoctor);
                 const avatarSrc = avatarPath ? resolveAssetPath(avatarPath) : "";
                 const avatarClassName = `doctor-profile-modal__avatar${avatarSrc ? " doctor-profile-modal__avatar--image" : ""}`;
                 return (

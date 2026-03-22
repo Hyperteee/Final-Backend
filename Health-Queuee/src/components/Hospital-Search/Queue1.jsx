@@ -22,6 +22,19 @@ function Queue1() {
   const handleShow = () => setShow(true);
   const navigate = useNavigate();
 
+  const [backendSpecialties, setBackendSpecialties] = useState([]);
+
+  useEffect(() => {
+    fetch("http://127.0.0.1:3000/data/getSpecialties")
+      .then(res => res.json())
+      .then(data => {
+        if (data.message === "Success" && data.specialties) {
+          setBackendSpecialties(data.specialties);
+        }
+      })
+      .catch(err => console.error("Error fetching specialties:", err));
+  }, []);
+
   const hospitalData = hospitalMap[selectedHospital]?.info || null;
 
   function handleNext(department, chooseDoctor, selectedHospital) {
@@ -246,7 +259,7 @@ function Queue1() {
                 {t('modal_instruction')}
               </p>
               <div className="department-grid-list">
-                {hospitalData?.departments
+                {backendSpecialties
                   ?.filter((dep) => dep.name !== "ไม่รู้แผนก")
                   ?.map((dep) => (
                     <div

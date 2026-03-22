@@ -1,8 +1,9 @@
 import express from 'express'
 import cors from 'cors'
 import userRouter from './routers/usersRouter.js'
+import dataRouter from './routers/dataRouter.js'
 
-const host = '172.24.112.1'
+const host = '127.0.0.1'
 const port = '3000'
 
 const app = express()
@@ -10,7 +11,8 @@ app.use(cors())
 app.use(express.json())
 
 app.use('/users', userRouter)
+app.use('/data', dataRouter)
 
 app.listen(port, host, ()=>{
     console.log('server http://'+host+':'+port,'is running')
-})
+})

@@ -9,18 +9,31 @@ import { useTranslation } from "react-i18next";
 function Queue2() {
   const { t } = useTranslation();
   const { state } = useLocation();
-  const { selectedHospital, selectedDepartment, optionChooseDoctor } =
+  const { selectedHospital, selectedDepartment, optionChooseDoctor, departmentName } =
     state || {};
-  const hospitalData = hospitalMap[selectedHospital]?.info || null;
   const navigate = useNavigate();
 
-  const departmentData = hospitalData?.departments.find(
-    (dep) => dep.id === selectedDepartment
-  );
+  const [backendDoctors, setBackendDoctors] = useState([]);
+
+  useEffect(() => {
+    fetch("http://127.0.0.1:3000/data/getDoctors")
+      .then(res => res.json())
+      .then(data => {
+        if (data.message === "Success" && data.doctors) {
+          const filtered = data.doctors.filter(d => d.specialty_id === selectedDepartment);
+          const formatted = filtered.map(d => ({
+            id: d.id,
+            name: `${d.prefix ? d.prefix + ' ' : ''}${d.first_name} ${d.last_name}`.trim(),
+            department: departmentName || d.specialization || "ทั่วไป",
+          }));
+          setBackendDoctors(formatted);
+        }
+      })
+      .catch(err => console.error("Error fetching doctors for queue2:", err));
+  }, [selectedDepartment, departmentName]);
 
   function handleBook(selectedHospital, selectedDoctor, selectedDepartment) {
-    const departmentName = departmentData?.name;
-    const doctor = departmentData?.doctors.find(
+    const doctor = backendDoctors.find(
       (doc) => doc.id === selectedDoctor
     );
     const doctorName = doctor?.name;
@@ -70,7 +83,7 @@ function Queue2() {
               className="bg-primary-subtle rounded-2 px-2 py-2 fw-semibold"
               style={{ color: "#001E6C" }}
             >
-              {t('department_prefix')}{departmentData?.name}
+              {t('department_prefix')}{departmentName}
             </div>
           </div>
 
@@ -133,7 +146,7 @@ function Queue2() {
           style={{ width: "100%", maxWidth: "900px", padding: "0 15px" }}
         >
           <div className="row g-4">
-            {departmentData?.doctors.map((doctor) => {
+            {backendDoctors.map((doctor) => {
               return (
                 <div className="col-md-6" key={doctor.id}>
                   <div className="card border-0 shadow-sm rounded-4 position-relative h-100 doctor-card">
