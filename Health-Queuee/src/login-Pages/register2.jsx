@@ -26,6 +26,7 @@ export default function Register2() {
     gender: "",
   });
 
+  // eslint-disable-next-line no-unused-vars
   const [rememberMe, setRememberMe] = useState(false);
 
   // 2. ฟังก์ชันอัปเดตข้อมูลเมื่อมีการพิมพ์

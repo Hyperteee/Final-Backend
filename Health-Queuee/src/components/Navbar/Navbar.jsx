@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 export default function NavigationBar() {
+  /* eslint-disable no-unused-vars */
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);

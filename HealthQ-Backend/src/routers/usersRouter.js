@@ -55,6 +55,7 @@ const userRouter = express.Router();
  *       500:
  *         description: Server error
  */
+
 // --- Register Route ---
 userRouter.post("/register", async (req, res) => {
   try {
@@ -136,6 +137,7 @@ userRouter.post("/register", async (req, res) => {
  *       500:
  *         description: Server error
  */
+
 // --- Login Route ---
 userRouter.post("/login", async (req, res) => {
   try {
@@ -209,6 +211,7 @@ userRouter.post("/login", async (req, res) => {
  *       500:
  *         description: Server error
  */
+
 // --- Get All Users Route ---
 userRouter.get("/all", async (req, res) => {
   try {
@@ -274,6 +277,7 @@ userRouter.get("/all", async (req, res) => {
  *       500:
  *         description: Server error
  */
+
 // --- Update User Role Route ---
 userRouter.put("/:id/role", async (req, res) => {
   try {
@@ -311,6 +315,7 @@ userRouter.put("/:id/role", async (req, res) => {
  *       500:
  *         description: Server error
  */
+
 // --- Delete User Route ---
 userRouter.delete("/:id", async (req, res) => {
   try {
