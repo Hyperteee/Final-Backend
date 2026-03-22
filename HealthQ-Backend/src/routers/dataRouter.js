@@ -9,6 +9,28 @@ import {
 const dataRouter = Router();
 
 // GET /data/getDoctors
+/**
+ * @swagger
+ * /data/getDoctors:
+ *   get:
+ *     summary: Get list of doctors
+ *     tags: [Data]
+ *     responses:
+ *       200:
+ *         description: Success
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message: { type: string }
+ *                 doctors: 
+ *                   type: array
+ *                   items: 
+ *                     type: object
+ *       500:
+ *         description: Internal Server Error
+ */
 dataRouter.get("/getDoctors", async (req, res) => {
   try {
     const result = await getDoctorsData();
@@ -20,6 +42,28 @@ dataRouter.get("/getDoctors", async (req, res) => {
 });
 
 // GET /data/getHospital
+/**
+ * @swagger
+ * /data/getHospital:
+ *   get:
+ *     summary: Get list of hospitals
+ *     tags: [Data]
+ *     responses:
+ *       200:
+ *         description: Success
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message: { type: string }
+ *                 hospitals: 
+ *                   type: array
+ *                   items: 
+ *                     type: object
+ *       500:
+ *         description: Internal Server Error
+ */
 dataRouter.get("/getHospital", async (req, res) => {
   try {
     const result = await getHospitalsData();
@@ -31,6 +75,28 @@ dataRouter.get("/getHospital", async (req, res) => {
 });
 
 // GET /data/getSpecialties
+/**
+ * @swagger
+ * /data/getSpecialties:
+ *   get:
+ *     summary: Get list of specialties
+ *     tags: [Data]
+ *     responses:
+ *       200:
+ *         description: Success
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message: { type: string }
+ *                 specialties: 
+ *                   type: array
+ *                   items: 
+ *                     type: object
+ *       500:
+ *         description: Internal Server Error
+ */
 dataRouter.get("/getSpecialties", async (req, res) => {
   try {
     const result = await getSpecialtiesData();
@@ -42,6 +108,28 @@ dataRouter.get("/getSpecialties", async (req, res) => {
 });
 
 // GET /data/getAppointments
+/**
+ * @swagger
+ * /data/getAppointments:
+ *   get:
+ *     summary: Get list of appointments
+ *     tags: [Data]
+ *     responses:
+ *       200:
+ *         description: Success
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message: { type: string }
+ *                 appointments: 
+ *                   type: array
+ *                   items: 
+ *                     type: object
+ *       500:
+ *         description: Internal Server Error
+ */
 dataRouter.get("/getAppointments", async (req, res) => {
   try {
     const result = await getAppointmentsData();
