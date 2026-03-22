@@ -28,10 +28,6 @@ export default function NavigationBar() {
     console.log ("isLoggedIn ===>", localStorage.getItem("isLoggedIn"));
   };
 
-  const changeLanguage = (lng) => {
-    i18n.changeLanguage(lng);
-  };
-
   const displayName = currentUser
     ? currentUser.fullname || currentUser.name || currentUser.email
     : null;
@@ -121,8 +117,8 @@ export default function NavigationBar() {
               </Dropdown.Toggle>
 
               <Dropdown.Menu>
-                {(currentUser?.role === "admin" ||
-                  currentUser?.role === "super_admin") && (
+                {(currentUser?.role_id === 1 ||
+                  currentUser?.role_id === 2) && (
                   <Dropdown.Item
                     onClick={() => navigate("/admin/dashboard")}
                     className="d-flex align-items-center gap-2 fw-semibold text-warning"

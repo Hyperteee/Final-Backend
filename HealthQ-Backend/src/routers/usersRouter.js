@@ -1,108 +1,174 @@
-import { Router } from "express";
+import 'dotenv/config';
+import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
-dotenv.config();
-const JWT_SECRET = process.env.JWT_SECRET;
+
 import {
   createUser,
   getUserByUsername,
-  getRoleNamebyUserId,
-  selectAllUsers,
+  getAllUsers,
+  updateUserRole,
+  deleteUser
+  // getRoleNamebyUserId, 
+  // selectAllUsers 
 } from "../controller/userController.js";
-const userRouter = Router();
 
-//register (user,pass) -> database
+
+
+
+const userRouter = express.Router();
+
+// --- Register Route ---
 userRouter.post("/register", async (req, res) => {
-  //(user,pass,roleId) -> database
-  // extract
-  const { username, password, role_id } = req.body;
-  //validate
-  //process
   try {
-    await createUser(username, password, role_id);
-    return res.status(200).json({ message: "success" });
-  } catch (error) {
-    // พ่น error ออกมาดูใน Terminal ของ VS Code
-    console.error("DATABASE ERROR:", error);
+    const { title, name, lastname, gender, identificationNumber, phone, birthDate, nationality, email, password } = req.body;
+    
+    // กำหนด username ให้เป็น email หากไม่ได้ส่งมาแยกต่างหาก
+    const username = req.body.username || email;
+    const role_id = req.body.role_id || 3; // กำหนดค่าแบบ defualt ผู้ใช้ทั่วไป
 
-    // ส่งข้อความ error กลับไปที่ Postman ด้วย จะได้รู้ว่าติดตรงไหน
-    return res.status(500).json({
-      message: "Internal Server Error",
-      error: error.message,
+    if (!email || !password || !identificationNumber || !name) {
+      return res.status(400).json({ message: "ข้อมูลไม่ครบถ้วน กรุณากรอกข้อมูลที่จำเป็นให้ครบ" });
+    }
+
+    const oldUser = await getUserByUsername(username);
+    if (oldUser) {
+      return res.status(400).json({ message: "Username หรืออีเมลนี้ถูกใช้งานแล้ว" });
+    }
+
+    // const encryptedPassword = await bcrypt.hash(password, 10);
+
+    const user = await createUser({ 
+      title, name, lastname, gender, identificationNumber, phone, birthDate, nationality, email, username, password, role_id 
     });
-  }
 
-  //return
-  res.send(req.method, req.originalUrl, "endpoint");
+
+    const token = jwt.sign(
+      { userId: user.id, role: user.role_id, email: user.email },
+      process.env.JWT_SECRET || 'your_secret_key',
+      { expiresIn: "1h" }
+    );
+
+    return res.status(201).json({
+      message: "ลงทะเบียนสำเร็จ",
+      data: user,
+      token: token
+    });
+
+  } catch (error) {
+    console.log("Error registering user:", error);
+    return res.status(500).json({ message: "Server Error" });
+  }
 });
-//login (user, pass) -> gen token -> frontend
+
+// --- Login Route ---
 userRouter.post("/login", async (req, res) => {
-  const { username, password, role_id } = req.body;
-  //check username, password
-  const user = await getUserByUsername(username);
-  console.log(user);
-  if (user === undefined) return res.status(404).json({ message: "not found" });
-  const result = await bcrypt.compare(password, user.password);
-  console.log(result);
-  if (!result) return res.status(403).json({ message: "Unauthorized" });
-  //generate token
-  const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: "1h" });
-  //sebd token back to frontend
-  res.status(200).json({ message: "success", token });
-  res.send(`${req.method} ${req.originalUrl}`);
-});
-//middleware for checking token
-const jwtTokenMiddleware = (req, res, next) => {
-  //[0]   [1]
-  // Bearer eyJh...
-  const token = req.headers.authorization?.split(" ")[1];
-  //   console.log(token)
-
-  //verify token
-  jwt.verify(token, JWT_SECRET, (err, payload) => {
-    if (err) {
-      req.jwtExpired = true;
-      req.userId = null;
-    } else {
-      req.jwtExpired = false;
-      req.userId = payload.id;
-    }
-    // console.log(err)
-    // console.log(payload)
-  });
-
-  next();
-};
-
-//verify (token) -> check authorize (admin, manager, worker)
-userRouter.get("/verify", jwtTokenMiddleware, async (req, res) => {
-  if (req.jwtExpired) return res.status(403).json({ message: "Unauthorized" });
-
-  // get role "name" by user "id"
-  const result = await getRoleNamebyUserId(req.userId);
-  console.log(result);
-
-  res.status(200).json({ message: "success", role: result[0].role });
-
-  //   res.send(`${req.method} ${req.originalUrl}`);
-});
-userRouter.get("/list", jwtTokenMiddleware, async (req, res) => {
-  if (req.jwtExpired) return res.status(403).json({ message: "Unauthorized" });
   try {
-    const result = await getRoleNamebyUserId(req.userId);
-    console.log(result[0].role);
-    const role = result[0].role;
-    if (role === "Super Admin" || role === "Admin") {
-      const users = await selectAllUsers(role);
-      return res.status(200).json(users);
-    } else {
-      return res.status(403).json({ message: "You are not Admin" });
+    const { username, email, password } = req.body;
+
+    const loginIdentifier = username || email;
+    
+    if (!loginIdentifier) {
+      return res.status(400).json({ message: "กรุณากรอกชื่อผู้ใช้หรืออีเมล" });
     }
-  } catch (err) {
-    console.log(err);
+
+    const user = await getUserByUsername(loginIdentifier);
+    if (!user) {
+      return res.status(404).json({ message: "ไม่พบผู้ใช้งาน" });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "รหัสผ่านไม่ถูกต้อง" });
+    }
+
+    const token = jwt.sign(
+      { userId: user.id, role: user.role_id, email: user.email },
+      process.env.JWT_SECRET || 'your_secret_key',
+      { expiresIn: "2h" }
+    );
+
+    return res.status(200).json({
+      message: "Login successful",
+      token: token,
+      data: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role_id: user.role_id
+      }
+    });
+
+} catch (error) {
+    console.error(error);
+    return res.status(500).json({ 
+        message: "Server Error", 
+        debug_error: error.message 
+    });
+}
+});
+
+// --- Get All Users Route ---
+userRouter.get("/all", async (req, res) => {
+  try {
+    const users = await getAllUsers();
+    // แปลง role_id เป็นข้อความเพื่อความเข้ากันได้กับตาราง Frontend (1=super_admin, 2=admin, 3=user, 4=pending)
+    // หรือส่ง role_id ไปให้ Frontend จัดการเลย
+    const formattedUsers = users.map(user => {
+      let roleText = 'user';
+      if (user.status === 'pending') {
+          roleText = 'pending';
+      } else {
+          if (user.role_id === 1) roleText = 'super_admin';
+          else if (user.role_id === 2) roleText = 'admin';
+          else if (user.role_id === 3) roleText = 'user';
+      }
+      
+      return {
+        userId: user.id, // ใช้ userId ให้ตรงกับ Frontend เดิมที่ทำไว้
+        name: user.name || '',
+        lastname: user.lastname || '',
+        email: user.email,
+        role_id: user.role_id,
+        role: roleText
+      };
+    });
+    
+    return res.status(200).json(formattedUsers);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    return res.status(500).json({ message: "Server Error" });
   }
-  // get role "name" by user "id"
+});
+
+// --- Update User Role Route ---
+userRouter.put("/:id/role", async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const { role_id, status } = req.body;
+    
+    if (!role_id) {
+      return res.status(400).json({ message: "กรุณาระบุ role_id" });
+    }
+    
+    await updateUserRole(userId, role_id, status);
+    return res.status(200).json({ message: "อัปเดตสิทธิ์ผู้ใช้สำเร็จ" });
+  } catch (error) {
+    console.error("Error updating user role:", error);
+    return res.status(500).json({ message: "Server Error" });
+  }
+});
+
+// --- Delete User Route ---
+userRouter.delete("/:id", async (req, res) => {
+  try {
+    const userId = req.params.id;
+    await deleteUser(userId);
+    return res.status(200).json({ message: "ลบผู้ใช้สำเร็จ" });
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    return res.status(500).json({ message: "Server Error" });
+  }
 });
 
 export default userRouter;

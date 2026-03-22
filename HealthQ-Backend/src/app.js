@@ -10,12 +10,20 @@ const port = '3000'
 
 const app = express()
 
+// const UserRouter = Router()
+
 
 
 app.use(express.json())
 app.use(cors())
-app.use(userRouter)
+app.use("/users", userRouter);
 app.use('/mail', mailRouter);
+
+// app.post("register", (req, res) => {
+//     console.log(req.body);
+//     res.send("ok");
+// });
+
 
 app.get('/', (req, res)=>{
     res.send(`server http://${host}:${port} is running`);

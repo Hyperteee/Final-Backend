@@ -41,7 +41,7 @@ export default function Register2() {
     }
   };
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
 
     const id = formData.identificationNumber;
@@ -59,17 +59,8 @@ export default function Register2() {
       return;
     }
 
-    const users = JSON.parse(localStorage.getItem("users")) || [];
-
     if (formData.password !== formData.confirmPassword) {
       alert("รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน!");
-      return;
-    }
-
-    const foundUser = users.find((u) => u.email === formData.email);
-
-    if (foundUser) {
-      alert("มี email นี้ในระบบแล้ว");
       return;
     }
 
@@ -83,8 +74,7 @@ export default function Register2() {
       return;
     }
 
-    const newUser = {
-      userId: Date.now(),
+    const payload = {
       title: formData.title,
       name: formData.name,
       lastname: formData.lastname,
@@ -93,17 +83,31 @@ export default function Register2() {
       identificationNumber: formData.identificationNumber,
       birthDate: formData.birthDate,
       password: formData.password,
-      registeredAt: new Date().toLocaleString(),
-      role: "pending",
       nationality: formData.nationality,
       gender: formData.gender,
     };
 
-    const existingUsers = JSON.parse(localStorage.getItem("users")) || [];
-    localStorage.setItem("users", JSON.stringify([...existingUsers, newUser]));
+    try {
+      const response = await fetch("http://localhost:3000/users/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
-    alert("สมัครสมาชิกสำเร็จ! กรุณารอแอดมินอนุมัติ");
-    navigate("/login");
+      const data = await response.json();
+
+      if (response.ok || response.status === 201) {
+        alert("สมัครสมาชิกสำเร็จ! กรุณารอแอดมินอนุมัติ");
+        navigate("/login");
+      } else {
+        alert("ไม่สามารถสมัครได้: " + (data.message || "เกิดข้อผิดพลาด"));
+      }
+    } catch (error) {
+      console.error("Error connecting to backend:", error);
+      alert("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาลองตรวจสอบ Backend ของคุณ");
+    }
   };
 
   return (
@@ -142,7 +146,7 @@ export default function Register2() {
                     style={{
                       maxWidth: "100%",
                       height: "650px",
-                      objectFit: "fit-cover",
+                      objectFit: "cover",
                       filter:
                         "drop-shadow(0 10px 30px rgba(168, 85, 247, 0.2))",
                       marginTop: "-22px",
@@ -402,13 +406,13 @@ export default function Register2() {
                       {/* Link to Login */}
                       <p className="text-white text-center mt-3 small">
                         มีบัญชีอยู่แล้ว?{" "}
-                        <a
+                        <span
                           onClick={() => navigate("/login")}
-                          href="#"
                           className="text-white fw-semibold text-decoration-underline"
+                          style={{ cursor: "pointer" }}
                         >
                           เข้าสู่ระบบ
-                        </a>
+                        </span>
                       </p>
                     </Form>
                   </div>

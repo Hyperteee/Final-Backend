@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Container, Row, Col, Form, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-// import { useAuth } from "../Login-Pages/data-login/AuthContext.jsx"; // <--- ลบการนำเข้า useAuth ออก
 
 export default function Login2() {
   const [email, setEmail] = useState("");
@@ -9,63 +8,62 @@ export default function Login2() {
   const [rememberMe, setRememberMe] = useState(false);
 
   const navigate = useNavigate();
-  // const { login } = useAuth(); // <--- ลบการดึงฟังก์ชัน login ออก
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-  localStorage.setItem("isLoggedIn", "true");
 
-const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
-console.log("isLoggedIn ===>", isLoggedIn);
+    try {
+      // ยิงข้อมูลไปที่ API Login ของ Backend
+      const response = await fetch("http://localhost:3000/users/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: email, // ส่งอีเมลไปตรวจ
+          password: password, // ส่งรหัสผ่านไปตรวจ
+        }),
+      });
 
-    // ดึงผู้ใช้ทั้งหมดจาก localStorage
-    const users = JSON.parse(localStorage.getItem('users')) || [];
-    // ค้นหาผู้ใช้จากอีเมล
-    const foundUser = users.find((u) => u.email === email);
+      const data = await response.json();
 
-    // 1. ตรวจสอบ Super Admin (ตาม Logic ของ Login-user.jsx)
-    if (email === "admin@gmail.com" && password === "1234") {
-      const superAdminUser = {
-        fullname: "Super Admin",
-        email: "admin@gmail.com",
-        role: "super_admin",
-        adminScope: "all",
-      };
-      localStorage.setItem('currentUser', JSON.stringify(superAdminUser));
+      if (response.ok) {
+        // ถ้ารหัสผ่านถูก Backend จะตอบสถานะ OK กลับมา
+        localStorage.setItem("isLoggedIn", "true");
+        localStorage.setItem("currentUser", JSON.stringify(data.data || data.user || data)); // เก็บข้อมูล User ลง LocalStorage
 
-      alert("ยินดีต้อนรับ Super Admin!");
-      navigate("/"); // นำทางไปที่ /admin
-      return;
-    }
-    
-    // 2. ตรวจสอบผู้ใช้ทั่วไป (Admin, User, Pending)
-    if (!foundUser) {
-      alert("ข้อมูลผิด");
-      return;
-    }
-    if (foundUser.password !== password) {
-      alert("รหัสผ่านไม่ถูกต้อง");
-      return;
-    }
+        // หาก Backend มีการสร้าง Token ให้เก็บไว้ใช้งาน
+        if (data.token) {
+          localStorage.setItem("token", data.token); 
+        }
 
-    // 3. จัดการตามบทบาท (Role) ของผู้ใช้ที่พบ
-    if (foundUser.role === "admin") {
-      alert("ยินดีต้อนรับ Admin!");
-      localStorage.setItem('currentUser', JSON.stringify(foundUser));
-      navigate("/"); // นำทางไปที่ /admin
-    } else if (foundUser.role === "pending") {
-      alert("กรุณารอแอดมินยืนยันบัญชีของท่านก่อน");
-    } else if (foundUser.role === "user") {
-      alert("เข้าสู่ระบบสำเร็จ!");
-      localStorage.setItem('currentUser', JSON.stringify(foundUser));
-      navigate("/"); // นำทางไปที่หน้าหลัก /
-    } else {
-      alert("ข้อมูลผิด");
+        // เช็ก Role จาก Backend (ระวังว่า Backend ส่งข้อมูลมาใน data.data)
+        const userData = data.data || data.user || data;
+        const userRole = userData.role || userData.role_id; 
+        
+        // เช็กบทบาทผู้ใช้งาน (ปรับเลข 1, 2, 3 ตามที่ตั้งไว้ใน DB ของคุณ)
+        if (userRole === "super_admin" || userRole === 1) {
+          alert("ยินดีต้อนรับ Super Admin!");
+          navigate("/admin"); // ไปหน้าแอดมิน
+        } else if (userRole === "admin" || userRole === 2) {
+          alert("ยินดีต้อนรับ Admin!");
+          navigate("/admin"); // ไปหน้าแอดมิน
+        } else if (userRole === "pending") {
+          alert("กรุณารอแอดมินยืนยันบัญชีของท่านก่อน");
+        } else {
+          alert("เข้าสู่ระบบสำเร็จ!");
+          navigate("/"); // ไปหน้าหลัก
+        }
+      } else {
+        alert(data.message || "ข้อมูลเข้าสู่ระบบไม่ถูกต้อง");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      alert("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาตรวจสอบ Backend");
     }
   };
 
   const PRIMARY_BLUE = "#0040FF";
-  const DARK_BLUE = "#020A1B";
 
   return (
     <div
@@ -98,27 +96,28 @@ console.log("isLoggedIn ===>", isLoggedIn);
                   "linear-gradient(135deg, #071164ff 0%, #2527afff 50%, #7d7bffff 100%)",
               }}
             >
-        <div
-          className="d-flex align-items-center gap-3 py-3 px-4"
-          role="button"
-          onClick={() => navigate("/")}
-          style={{ cursor: "pointer" }}
-        >
-          <div
-            className="d-flex align-items-center justify-content-center bg-primary rounded-3"
-            style={{
-              width: "50px",
-              height: "50px",
-              backgroundColor: PRIMARY_BLUE,
-            }}
-          >
-            <span className="text-white fw-bold fs-4">H</span>
-          </div>
-          <div>
-          </div>
-        </div>
+              <div
+                className="d-flex align-items-center gap-3 py-3 px-4"
+                role="button"
+                onClick={() => navigate("/")}
+                style={{ cursor: "pointer" }}
+              >
+                <div
+                  className="d-flex align-items-center justify-content-center bg-primary rounded-3"
+                  style={{
+                    width: "50px",
+                    height: "50px",
+                    backgroundColor: PRIMARY_BLUE,
+                  }}
+                >
+                  <span className="text-white fw-bold fs-4">H</span>
+                </div>
+              </div>
 
-              <div className="d-flex flex-column justify-content-center align-items-center h-100 px-5" style={{ marginTop: "-50px"}}>
+              <div
+                className="d-flex flex-column justify-content-center align-items-center h-100 px-5"
+                style={{ marginTop: "-50px" }}
+              >
                 <div className="w-100" style={{ maxWidth: 400 }}>
                   <h1 className="text-white text-center mb-2 fw-bold">LOGIN</h1>
 
@@ -131,7 +130,7 @@ console.log("isLoggedIn ===>", isLoggedIn);
                       <Form.Control
                         type="text"
                         size="lg"
-                        placeholder="อีเมล หรือ เบอร์โทรศัพท์"
+                        placeholder="อีเมล"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required

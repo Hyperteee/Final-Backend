@@ -20,7 +20,8 @@ export default function AdminDashboard() {
     setUsers(storedUsers);
 
     const loggedInUser = JSON.parse(localStorage.getItem('currentUser'));
-    if (!loggedInUser || (loggedInUser.role !== "admin" && loggedInUser.role !== "super_admin")) {
+    const userRole = loggedInUser?.role || loggedInUser?.role_id;
+    if (!loggedInUser || (userRole !== "admin" && userRole !== "super_admin" && userRole !== 1 && userRole !== 2)) {
         alert("คุณไม่มีสิทธิเข้าถึงหน้านี้");
         navigate('/'); 
     }

@@ -34,7 +34,7 @@ const AdminNavbar = () => {
                      <img src="https://via.placeholder.com/1200x400/eef2ff/001E6C?text=Admin+Dashboard+Banner+(Placeholder)" alt="" />
                 </div>
                 <div className="profile-info">
-                    <h5 className="profile-name">{currentUser.role}</h5>
+                    <h5 className="profile-name">{currentUser.role || (currentUser.role_id === 1 ? 'super_admin' : (currentUser.role_id === 2 ? 'admin' : ''))}</h5>
                     <small className='text-primary'>{currentUser.adminScope == "all" ? "ดูแลทั้งระบบ" : currentUser.adminScope }</small>
                 </div>
             </div>
