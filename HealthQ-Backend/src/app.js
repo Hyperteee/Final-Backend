@@ -1,16 +1,27 @@
-import express from 'express'
+import express, { Router } from 'express'
 import cors from 'cors'
+import nodemailer from 'nodemailer' // เปลี่ยนเป็นแบบนี้ครับ
 import userRouter from './routers/usersRouter.js'
+import mailRouter from './routers/mailRouter.js';
 
-const host = '172.24.112.1'
+
+const host = 'localhost'
 const port = '3000'
 
 const app = express()
+
 app.use(cors())
 app.use(express.json())
+app.use(Router)
+app.use(userRouter)
+app.use('/mail', mailRouter);
 
-app.use('/users', userRouter)
+app.get('/', (req, res)=>{
+    res.send(`server http://${host}:${port} is running`);
+});
 
-app.listen(port, host, ()=>{
-    console.log('server http://'+host+':'+port,'is running')
-})
+app.listen(port, () => {
+    console.log(`Server is running at http://${host}:${port}`);
+});
+
+export default app;

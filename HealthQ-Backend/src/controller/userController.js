@@ -53,3 +53,4 @@ WHERE users.id = ?`;
   const result = await query(sql, params);
   return result;
 };
+
