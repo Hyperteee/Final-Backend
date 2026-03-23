@@ -216,8 +216,7 @@ userRouter.post("/login", async (req, res) => {
 userRouter.get("/all", async (req, res) => {
   try {
     const users = await getAllUsers();
-    // แปลง role_id เป็นข้อความเพื่อความเข้ากันได้กับตาราง Frontend (1=super_admin, 2=admin, 3=user, 4=pending)
-    // หรือส่ง role_id ไปให้ Frontend จัดการเลย
+    // แปลง role_id (1=super_admin, 2=admin, 3=user,)
     const formattedUsers = users.map(user => {
       let roleText = 'user';
       if (user.status === 'pending') {
@@ -229,7 +228,7 @@ userRouter.get("/all", async (req, res) => {
       }
       
       return {
-        userId: user.id, // ใช้ userId ให้ตรงกับ Frontend เดิมที่ทำไว้
+        userId: user.id,
         name: user.name || '',
         lastname: user.lastname || '',
         email: user.email,

@@ -3,6 +3,7 @@ import cors from 'cors'
 import nodemailer from 'nodemailer' 
 import userRouter from './routers/usersRouter.js'
 import mailRouter from './routers/mailRouter.js';
+import dataRouter from './routers/dataRouter.js';
 
 
 import swaggerUi from 'swagger-ui-express';

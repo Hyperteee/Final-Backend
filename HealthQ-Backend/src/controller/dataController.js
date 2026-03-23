@@ -4,11 +4,11 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const config = {
-  host: process.env.DB_host,
-  user: process.env.DB_user,
-  port: process.env.DB_port,
-  password: process.env.DB_pass,
-  database: process.env.DB_data,
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  port: process.env.DB_PORT,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_DATABASE,
 };
 
 // ฟังก์ชันสำหรับคิวรีฐานข้อมูล

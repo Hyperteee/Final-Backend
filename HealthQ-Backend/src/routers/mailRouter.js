@@ -52,8 +52,8 @@ mailRouter.post("/send-email", async (req, res) => {
         to: req.body.to, 
         subject: req.body.subject,
         text: req.body.text,
-        html:
-            `<img src="https://cdn.discordapp.com/attachments/1288845074557304883/1485313222272880791/image.png?ex=69c1693b&is=69c017bb&hm=48cd49b115f34e4585f4f6770cd3164c61273f7d7eab9c88abcbe7553c667dc2&" alt="Loading..." width="200" height="200"/>`,
+        // html:
+        //     `<img src="https://cdn.discordapp.com/attachments/1288845074557304883/1485313222272880791/image.png?ex=69c1693b&is=69c017bb&hm=48cd49b115f34e4585f4f6770cd3164c61273f7d7eab9c88abcbe7553c667dc2&" alt="Loading..." width="200" height="200"/>`,
     };
 
     try {
