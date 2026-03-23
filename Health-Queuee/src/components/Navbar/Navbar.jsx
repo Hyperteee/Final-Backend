@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 export default function NavigationBar() {
+  /* eslint-disable no-unused-vars */
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
@@ -26,10 +27,6 @@ export default function NavigationBar() {
     setCurrentUser(null);
     navigate("/login");
     console.log ("isLoggedIn ===>", localStorage.getItem("isLoggedIn"));
-  };
-
-  const changeLanguage = (lng) => {
-    i18n.changeLanguage(lng);
   };
 
   const displayName = currentUser
@@ -121,8 +118,8 @@ export default function NavigationBar() {
               </Dropdown.Toggle>
 
               <Dropdown.Menu>
-                {(currentUser?.role === "admin" ||
-                  currentUser?.role === "super_admin") && (
+                {(currentUser?.role_id === 1 ||
+                  currentUser?.role_id === 2) && (
                   <Dropdown.Item
                     onClick={() => navigate("/admin/dashboard")}
                     className="d-flex align-items-center gap-2 fw-semibold text-warning"

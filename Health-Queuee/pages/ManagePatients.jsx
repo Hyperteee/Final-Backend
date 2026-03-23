@@ -335,8 +335,19 @@ export default function ManagePatients() {
     const [scopeType, setScopeType] = useState('all');
 
     useEffect(() => {
-        const storedUsers = JSON.parse(localStorage.getItem('users')) || [];
-        setUsers(storedUsers);
+        const fetchUsers = async () => {
+            try {
+                const response = await fetch('http://localhost:3000/users/all');
+                if (response.ok) {
+                    const data = await response.json();
+                    setUsers(data);
+                }
+            } catch (error) {
+                console.error('Error fetching users:', error);
+            }
+        };
+        fetchUsers();
+
         const loggedInUser = JSON.parse(localStorage.getItem('currentUser'));
         setCurrentUser(loggedInUser);
     }, []);
@@ -347,12 +358,23 @@ export default function ManagePatients() {
         return provinces.sort();
     }, []);
 
-    const handleApprove = (id) => {
-        const updatedUsers = users.map((user) => {
-            if (user.userId === id) return { ...user, role: 'user' };
-            return user;
-        });
-        saveUsers(updatedUsers);
+    const handleApprove = async (id) => {
+        try {
+            const response = await fetch(`http://localhost:3000/users/${id}/role`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ role_id: 3, status: 'approved' }) // 3 = user
+            });
+            if (response.ok) {
+                const updatedUsers = users.map((user) => {
+                    if (user.userId === id) return { ...user, role: 'user', role_id: 3, status: 'approved' };
+                    return user;
+                });
+                setUsers(updatedUsers);
+            }
+        } catch (error) {
+            alert('เกิดข้อผิดพลาดในการอัปเดตสถานะ');
+        }
     };
 
     const openPromoteModal = (id) => {
@@ -362,48 +384,75 @@ export default function ManagePatients() {
         setShowPromoteModal(true);
     };
 
-    const handleConfirmPromote = () => {
-        const updatedUsers = users.map((user) => {
-            if (user.userId === promotingUserId) {
-                return {
-                    ...user,
-                    role: 'admin',
-                    adminScope: scopeType === 'province' ? selectedProvince : 'all'
-                };
-            }
-            return user;
-        });
-
-        saveUsers(updatedUsers);
-        setShowPromoteModal(false);
-    };
-
-    const handleDemoteToUser = (id) => {
-        if (window.confirm("ต้องการลดขั้น Admin คนนี้กลับเป็น User หรือไม่?")) {
-            const updatedUsers = users.map((user) => {
-                if (user.userId === id) {
-                    const { adminScope, ...rest } = user;
-                    return { ...rest, role: 'user' };
-                }
-                return user;
+    const handleConfirmPromote = async () => {
+        try {
+            const response = await fetch(`http://localhost:3000/users/${promotingUserId}/role`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ role_id: 2, status: 'approved' }) // 2 = admin
             });
-            saveUsers(updatedUsers);
+            if (response.ok) {
+                const updatedUsers = users.map((user) => {
+                    if (user.userId === promotingUserId) {
+                        return {
+                            ...user,
+                            role: 'admin',
+                            role_id: 2,
+                            status: 'approved',
+                            adminScope: scopeType === 'province' ? selectedProvince : 'all'
+                        };
+                    }
+                    return user;
+                });
+                setUsers(updatedUsers);
+                setShowPromoteModal(false);
+            }
+        } catch(error) {
+            alert('เกิดข้อผิดพลาดในการตั้งเป็น Admin');
         }
     };
 
-    const handleDelete = (id) => {
+    const handleDemoteToUser = async (id) => {
+        if (window.confirm("ต้องการลดขั้น Admin คนนี้กลับเป็น User หรือไม่?")) {
+            try {
+                const response = await fetch(`http://localhost:3000/users/${id}/role`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ role_id: 3, status: 'approved' })
+                });
+                if (response.ok) {
+                    const updatedUsers = users.map((user) => {
+                        if (user.userId === id) {
+                            const { adminScope, ...rest } = user;
+                            return { ...rest, role: 'user', role_id: 3, status: 'approved' };
+                        }
+                        return user;
+                    });
+                    setUsers(updatedUsers);
+                }
+            } catch (error) {
+                alert('เกิดข้อผิดพลาดในการลดขั้น Admin');
+            }
+        }
+    };
+
+    const handleDelete = async (id) => {
         if (window.confirm("คุณต้องการลบข้อมูลผู้ใช้งานนี้ใช่หรือไม่?")) {
-            const updatedUsers = users.filter((user) => user.userId !== id);
-            saveUsers(updatedUsers);
+            try {
+                const response = await fetch(`http://localhost:3000/users/${id}`, {
+                    method: 'DELETE'
+                });
+                if (response.ok) {
+                    const updatedUsers = users.filter((user) => user.userId !== id);
+                    setUsers(updatedUsers);
+                }
+            } catch (error) {
+                 alert('เกิดข้อผิดพลาดในการลบผู้ใช้งาน');
+            }
         }
     };
 
-    const saveUsers = (data) => {
-        setUsers(data);
-        localStorage.setItem('users', JSON.stringify(data));
-    };
-
-    const isSuperAdmin = currentUser?.role === 'super_admin';
+    const isSuperAdmin = currentUser?.role === 'super_admin' || currentUser?.role_id === 1;
 
     const filteredUsers = users.filter(user => {
         if (activeTab === 'pending') return user.role === 'pending';
