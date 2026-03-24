@@ -184,37 +184,63 @@ export default function AdminDataManagement() {
   const [modalConfig, setModalConfig] = useState({ isOpen: false, mode: 'ADD', type: 'DEPT', data: null });
 
   useEffect(() => {
-    const loadedHospitals = [];
-    const loadedDepts = [];
-    const loadedDoctors = [];
+    const fetchData = async () => {
+      try {
+        const [hospRes, specRes, docRes] = await Promise.all([
+          fetch('http://localhost:3000/data/getHospital').then(r => r.json()),
+          fetch('http://localhost:3000/data/getSpecialties').then(r => r.json()),
+          fetch('http://localhost:3000/data/getDoctors').then(r => r.json())
+        ]);
 
-    Object.values(hospitalMap).forEach(h => {
-      const info = h.info;
-      loadedHospitals.push({ ...info });
+        if (hospRes.hospitals) {
+          setHospitals(hospRes.hospitals.map(h => ({
+            id: h.hospital_id,
+            db_id: h.id,
+            name: h.name,
+            state: h.state,
+            district: h.district,
+            type: h.type || 'โรงพยาบาล'
+          })));
+        }
 
-      if (info.departments) {
-        info.departments.forEach(d => {
-          loadedDepts.push({ ...d, hospitalId: info.id });
-          if (d.doctors) {
-            d.doctors.forEach(dr => {
-              loadedDoctors.push({ ...dr, departmentId: d.id, departmentName: d.name, hospitalId: info.id });
-            });
-          }
-        });
+        let globalDepts = [];
+        if (specRes.specialties) {
+          globalDepts = specRes.specialties.map(s => ({
+            id: s.id,
+            name: s.name
+          }));
+          setDepartments(globalDepts);
+        }
+
+        if (docRes.doctors) {
+          setDoctors(docRes.doctors.map(d => {
+            const specName = globalDepts.find(s => s.id === d.specialty_id)?.name || 'ไม่ระบุ';
+            return {
+              id: d.id,
+              first_name: d.first_name,
+              last_name: d.last_name,
+              name: (d.prefix ? d.prefix : '') + d.first_name + ' ' + d.last_name,
+              specialization: d.specialization || '',
+              departmentId: d.specialty_id,
+              departmentName: specName,
+              hospitalId: d.hospital_id,
+              prefix: d.prefix || ''
+            };
+          }));
+        }
+      } catch (err) {
+        console.error("Error fetching data:", err);
       }
-    });
-
-    setHospitals(loadedHospitals);
-    setDepartments(loadedDepts);
-    setDoctors(loadedDoctors);
+    };
+    fetchData();
   }, []);
 
   // --- Filter Logic ---
   const currentDepts = useMemo(() => {
-    let data = departments.filter(d => d.hospitalId === selectedHospital?.id);
+    let data = departments;
     if (searchTerm) data = data.filter(d => d.name.toLowerCase().includes(searchTerm.toLowerCase()));
     return data;
-  }, [departments, selectedHospital, searchTerm]);
+  }, [departments, searchTerm]);
 
   const currentDoctors = useMemo(() => {
     let data = doctors.filter(d => d.hospitalId === selectedHospital?.id);
@@ -226,8 +252,23 @@ export default function AdminDataManagement() {
 
   function handleSaveHospitalInfo(e) {
     e.preventDefault();
-    setHospitals(prev => prev.map(h => h.id === selectedHospital.id ? selectedHospital : h));
-    alert("✅ บันทึกข้อมูลโรงพยาบาลเรียบร้อย (จำลอง)");
+    fetch(`http://localhost:3000/data/hospitals/${selectedHospital.db_id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+         hospital_id: selectedHospital.id,
+         name: selectedHospital.name,
+         state: selectedHospital.state,
+         district: selectedHospital.district,
+         type: selectedHospital.type
+      })
+    })
+    .then(r => r.json())
+    .then(res => {
+      setHospitals(prev => prev.map(h => h.id === selectedHospital.id ? selectedHospital : h));
+      alert("✅ บันทึกข้อมูลโรงพยาบาลเรียบร้อย");
+    })
+    .catch(err => alert("เกิดข้อผิดพลาด: " + err));
   }
 
   function handleModalSave(formData) {
@@ -235,13 +276,9 @@ export default function AdminDataManagement() {
     
     if (type === 'DEPT') {
         if (mode === 'ADD') {
-            // เพิ่มแผนก
-            setDepartments([...departments, { ...formData, id: `NEW-D-${Date.now()}`, hospitalId: selectedHospital.id }]);
+            setDepartments([...departments, { ...formData, id: `NEW-D-${Date.now()}` }]);
         } else {
-            // แก้ไขแผนก
             setDepartments(departments.map(d => d.id === formData.id ? formData : d));
-            
-            // 🔥 Cascade Update: อัปเดตชื่อแผนกที่ติดตัวหมอไปด้วย
             setDoctors(prevDoctors => prevDoctors.map(doc => {
                 if (String(doc.departmentId) === String(formData.id)) {
                     return { ...doc, departmentName: formData.name };
@@ -249,28 +286,88 @@ export default function AdminDataManagement() {
                 return doc;
             }));
         }
+        setModalConfig({ ...modalConfig, isOpen: false });
     } else if (type === 'DOCTOR') {
-        // หาชื่อแผนก
         const deptName = departments.find(d => String(d.id) === String(formData.departmentId))?.name || "";
-        const newItem = { 
-            ...formData, 
-            departmentName: deptName, // ใส่ชื่อแผนกให้ถูกต้อง
-            hospitalId: selectedHospital.id 
-        };
         
+        const nameParts = (formData.name || "").trim().split(" ");
+        let firstName = nameParts[0] || "";
+        let lastName = nameParts.slice(1).join(" ") || "";
+        let prefixStr = "";
+        
+        if (firstName.startsWith("นพ.") || firstName.startsWith("พญ.")) {
+            prefixStr = firstName.substring(0, 3);
+            firstName = firstName.substring(3);
+        } else if (firstName.startsWith("นายแพทย์")) {
+            prefixStr = "นายแพทย์";
+            firstName = firstName.substring(8);
+        } else if (firstName.startsWith("แพทย์หญิง")) {
+            prefixStr = "แพทย์หญิง";
+            firstName = firstName.substring(9);
+        }
+
+        const payload = {
+            hospital_id: selectedHospital.id,
+            specialty_id: formData.departmentId,
+            specialization: formData.specialization,
+            prefix: formData.prefix || prefixStr,
+            first_name: firstName,
+            last_name: lastName
+        };
+
         if (mode === 'ADD') {
-            setDoctors([...doctors, { ...newItem, id: `NEW-DR-${Date.now()}` }]);
+            fetch('http://localhost:3000/data/doctors', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(r => r.json()).then(res => {
+                const newId = res.data?.insertId || Date.now();
+                setDoctors([...doctors, { 
+                    ...payload,
+                    id: newId,
+                    name: formData.name,
+                    departmentId: formData.departmentId,
+                    departmentName: deptName, 
+                    hospitalId: selectedHospital.id 
+                }]);
+                setModalConfig({ ...modalConfig, isOpen: false });
+                alert("เพิ่มแพทย์สำเร็จ");
+            }).catch(e => alert("Error: " + e));
         } else {
-            setDoctors(doctors.map(d => d.id === formData.id ? newItem : d));
+            fetch(`http://localhost:3000/data/doctors/${formData.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(r => r.json()).then(res => {
+                const updatedItem = { 
+                    ...payload,
+                    id: formData.id,
+                    name: formData.name,
+                    departmentId: formData.departmentId,
+                    departmentName: deptName, 
+                    hospitalId: selectedHospital.id 
+                };
+                setDoctors(doctors.map(d => d.id === formData.id ? updatedItem : d));
+                setModalConfig({ ...modalConfig, isOpen: false });
+                alert("อัปเดตแพทย์สำเร็จ");
+            }).catch(e => alert("Error: " + e));
         }
     }
-    setModalConfig({ ...modalConfig, isOpen: false });
   }
 
   function handleDelete(type, id) {
       if(!window.confirm("ยืนยันการลบข้อมูลนี้?")) return;
-      if (type === 'DEPT') setDepartments(departments.filter(d => d.id !== id));
-      if (type === 'DOCTOR') setDoctors(doctors.filter(d => d.id !== id));
+      
+      if (type === 'DEPT') {
+          setDepartments(departments.filter(d => d.id !== id));
+      } else if (type === 'DOCTOR') {
+          fetch(`http://localhost:3000/data/doctors/${id}`, {
+              method: 'DELETE'
+          }).then(r => r.json()).then(res => {
+              setDoctors(doctors.filter(d => d.id !== id));
+              alert("ลบข้อมูลแพทย์เรียบร้อยแล้ว");
+          }).catch(e => alert("Error deleting doctor: " + e));
+      }
   }
 
   if (view === "LIST") {
