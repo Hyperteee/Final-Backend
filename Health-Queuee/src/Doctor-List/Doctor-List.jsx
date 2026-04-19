@@ -263,7 +263,16 @@ export default function DoctorList() {
                                 const hospitalEntry = Object.values(hospitalMap).find(h => h.info?.name === doctor.hospital);
                                 const deptObj = hospitalEntry?.info?.departments?.find(d => d.name === doctor.dept);
                                 const deptId = deptObj?.id ?? doctor.dept;
-                                navigate("/queue3", { state: { selectedHospital: doctor.hospital, selectedDepartment: deptId, selectedDoctor: doctor.id } });
+                                navigate("/queue3", { 
+                                  state: { 
+                                    selectedHospital: doctor.hospital, 
+                                    selectedDepartment: deptId, 
+                                    selectedDoctor: doctor.id,
+                                    doctorName: doctor.name,
+                                    hospitalName: doctor.hospital,
+                                    departmentName: doctor.dept
+                                  } 
+                                });
                               }}
                               className="btn btn-primary rounded-pill py-2"
                             >
@@ -371,7 +380,16 @@ export default function DoctorList() {
                   const hospitalEntry = Object.values(hospitalMap).find(h => h.info?.name === selectedDoctor.hospital);
                   const deptObj = hospitalEntry?.info?.departments?.find(d => d.name === selectedDoctor.dept);
                   const deptId = deptObj?.id ?? selectedDoctor.dept;
-                  navigate("/queue3", { state: { selectedHospital: selectedDoctor.hospital, selectedDepartment: deptId, selectedDoctor: selectedDoctor.id } });
+                  navigate("/queue3", { 
+                    state: { 
+                      selectedHospital: selectedDoctor.hospital, 
+                      selectedDepartment: deptId, 
+                      selectedDoctor: selectedDoctor.id,
+                      doctorName: selectedDoctor.name,
+                      hospitalName: selectedDoctor.hospital,
+                      departmentName: selectedDoctor.dept
+                    } 
+                  });
                 }}
                 className="btn btn-primary rounded-pill px-4"
               >

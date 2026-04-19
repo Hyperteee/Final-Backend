@@ -42,8 +42,127 @@ export const getSpecialtiesData = async () => {
 
 // ดึงข้อมูลการจอง (Appointments)
 export const getAppointmentsData = async () => {
-  const sql = "SELECT * FROM appointments";
+  const sql = `
+    SELECT 
+      a.id,
+      a.user_id as userId,
+      a.doctor_id as doctorId,
+      a.appointment_date as priority1Date,
+      a.priority2_date as priority2Date,
+      a.appointment_time,
+      a.symptom,
+      a.status,
+      u.name,
+      u.lastname,
+      u.birth_date as birthDate,
+      u.identification_number as idCard,
+      d.hospital_id as hospitalId,
+      d.prefix,
+      d.first_name,
+      d.last_name as last_name_doc,
+      h.name as hospitalName,
+      s.name as departmentName
+    FROM appointments a
+    LEFT JOIN users u ON a.user_id = u.id
+    LEFT JOIN doctors d ON a.doctor_id = d.id
+    LEFT JOIN hospitals h ON d.hospital_id = h.hospital_id
+    LEFT JOIN specialties s ON d.specialty_id = s.id
+  `;
   const result = await query(sql);
+  
+  return result.map(row => ({
+    id: row.id, 
+    userId: row.userId,
+    batchId: null,
+    hospitalId: row.hospitalId,
+    hospitalName: row.hospitalName,
+    departmentName: row.departmentName,
+    doctorId: row.doctorId,
+    doctorName: row.first_name ? `${row.prefix||''} ${row.first_name} ${row.last_name_doc||''}`.trim() : "-",
+    name: (row.name || row.lastname) && `${row.name || ''} ${row.lastname || ''}`.trim() !== ''
+            ? `${row.name || ''} ${row.lastname || ''}`.trim() 
+            : `ผู้ใช้งาน (ID: ${row.userId})`,
+    birthDate: row.birthDate,
+    idCard: row.idCard,
+    symptom: row.symptom || "-",
+    files: [],
+    priority1Date: row.priority1Date,
+    priority2Date: row.priority2Date,
+    status: row.status === 'pending' ? 'NEW' : 
+            row.status === 'confirmed' ? 'CONFIRMED' : 
+            row.status === 'cancelled' ? 'CANCELLED' : row.status,
+    createdAt: new Date().toISOString()
+  }));
+};
+
+// เพิ่มข้อมูลการจอง (Create Appointment)
+export const createAppointment = async (data) => {
+  let timeStr = data.appointment_time;
+  if (timeStr) {
+    const timeMatch = timeStr.match(/(\d{2}:\d{2}:\d{2})/);
+    if (timeMatch) timeStr = timeMatch[1];
+  }
+
+  let dateStr = data.appointment_date;
+  if (dateStr) {
+    const dateMatch = dateStr.match(/(\d{4}-\d{2}-\d{2})/);
+    if (dateMatch) dateStr = dateMatch[1];
+  }
+
+  let date2Str = data.priority2_date;
+  if (date2Str) {
+    const dateMatch2 = date2Str.match(/(\d{4}-\d{2}-\d{2})/);
+    if (dateMatch2) date2Str = dateMatch2[1];
+  }
+
+  const sql = "INSERT INTO appointments (user_id, doctor_id, appointment_date, priority2_date, appointment_time, symptom, status) VALUES (?, ?, ?, ?, ?, ?, ?)";
+  const params = [
+    data.user_id,
+    data.doctor_id || null,
+    dateStr,
+    date2Str || null,
+    timeStr,
+    data.symptom,
+    data.status || "pending"
+  ];
+  const result = await query(sql, params);
+  return result;
+};
+
+// อัปเดตข้อมูลการจอง (Update Appointment)
+export const updateAppointment = async (id, data) => {
+  let timeStr = data.appointment_time;
+  if (timeStr) {
+    const timeMatch = timeStr.match(/(\d{2}:\d{2}(:\d{2})?)/);
+    if (timeMatch) {
+        timeStr = timeMatch[1];
+        if (timeStr.length === 5) timeStr += ":00";
+    }
+  }
+
+  let dateStr = data.appointment_date;
+  if (dateStr) {
+    const dateMatch = dateStr.match(/(\d{4}-\d{2}-\d{2})/);
+    if (dateMatch) dateStr = dateMatch[1];
+  }
+
+  // If date or time is not provided, update only status
+  let sql = "UPDATE appointments SET status = ?";
+  let params = [data.status];
+
+  if (dateStr) {
+      sql += ", appointment_date = ?";
+      params.push(dateStr);
+  }
+  if (timeStr) {
+      sql += ", appointment_time = ?";
+      params.push(timeStr);
+  }
+
+  sql += " WHERE id = ?";
+  params.push(id);
+
+  const result = await query(sql, params);
   return result;
 };
 

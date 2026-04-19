@@ -10,6 +10,8 @@ import {
   createDoctor,
   updateDoctor,
   deleteDoctor,
+  createAppointment,
+  updateAppointment,
 } from "../controller/dataController.js";
 
 const dataRouter = Router();
@@ -140,6 +142,88 @@ dataRouter.get("/getAppointments", async (req, res) => {
   try {
     const result = await getAppointmentsData();
     return res.status(200).json({ message: "Success", appointments: result });
+  } catch (error) {
+    console.error("DATABASE ERROR:", error);
+    return res.status(500).json({ message: "Internal Server Error", error: error.message });
+  }
+});
+
+// POST /data/appointments
+/**
+ * @swagger
+ * /data/appointments:
+ *   post:
+ *     summary: Create a new appointment
+ *     tags: [Data]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - user_id
+ *               - appointment_date
+ *               - appointment_time
+ *               - symptom
+ *             properties:
+ *               user_id: { type: string }
+ *               doctor_id: { type: integer }
+ *               appointment_date: { type: string, format: date }
+ *               appointment_time: { type: string, format: time }
+ *               symptom: { type: string }
+ *               status: { type: string }
+ *     responses:
+ *       201:
+ *         description: Success
+ *       500:
+ *         description: Internal Server Error
+ */
+dataRouter.post("/appointments", async (req, res) => {
+  try {
+    const result = await createAppointment(req.body);
+    return res.status(201).json({ message: "Appointment created successfully", data: result });
+  } catch (error) {
+    console.error("DATABASE ERROR:", error);
+    return res.status(500).json({ message: "Internal Server Error", error: error.message });
+  }
+});
+
+// PUT /data/appointments/:id
+/**
+ * @swagger
+ * /data/appointments/{id}:
+ *   put:
+ *     summary: Update an existing appointment (date, time, status)
+ *     tags: [Data]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - status
+ *             properties:
+ *               appointment_date: { type: string, format: date }
+ *               appointment_time: { type: string, format: time }
+ *               status: { type: string }
+ *     responses:
+ *       200:
+ *         description: Success
+ *       500:
+ *         description: Internal Server Error
+ */
+dataRouter.put("/appointments/:id", async (req, res) => {
+  try {
+    const result = await updateAppointment(req.params.id, req.body);
+    return res.status(200).json({ message: "Appointment updated successfully", data: result });
   } catch (error) {
     console.error("DATABASE ERROR:", error);
     return res.status(500).json({ message: "Internal Server Error", error: error.message });
