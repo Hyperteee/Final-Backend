@@ -29,7 +29,6 @@ const query = async (sql, params) => {
 export const createUser = async (userData) => {
   console.log("Checking data before hash:", userData);
   
-  // ป้องกันกรณีส่ง object ซ้อน
   const data = userData.username && typeof userData.username === 'object' ? userData.username : userData;
   const { title, name, lastname, gender, identificationNumber, phone, birthDate, nationality, email, username, password, role_id } = data;
 
@@ -44,7 +43,6 @@ export const createUser = async (userData) => {
   
   const result = await query(sql, params);
   
-  // คืนค่ากลับไปให้ Router ใช้งานต่อ (ป้องกัน user is not defined)
   return { 
     id: result.insertId, 
     email, 

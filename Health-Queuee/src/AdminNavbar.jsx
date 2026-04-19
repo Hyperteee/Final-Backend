@@ -31,11 +31,15 @@ const AdminNavbar = () => {
             {/* 1. ส่วนโปรไฟล์ */}
             <div className="sidebar-header">
                 <div className="profile-img-wrapper">
-                     <img src="https://via.placeholder.com/1200x400/eef2ff/001E6C?text=Admin+Dashboard+Banner+(Placeholder)" alt="" />
+                     <img src="https://via.placeholder.com/1200x400/0b0e14/6366f1?text=Admin+Dashboard" alt="" />
                 </div>
                 <div className="profile-info">
-                    <h5 className="profile-name">{currentUser.role || (currentUser.role_id === 1 ? 'super_admin' : (currentUser.role_id === 2 ? 'admin' : ''))}</h5>
-                    <small className='text-primary'>{currentUser.adminScope == "all" ? "ดูแลทั้งระบบ" : currentUser.adminScope }</small>
+                    <h5 className="profile-name">
+                        {currentUser?.role || (currentUser?.role_id === 1 ? 'super_admin' : (currentUser?.role_id === 2 ? 'admin' : 'Guest'))}
+                    </h5>
+                    <small className='text-primary'>
+                        {currentUser?.adminScope === "all" ? "ดูแลทั้งระบบ" : (currentUser?.adminScope || "ไม่มีสิทธิ์เข้าถึง")}
+                    </small>
                 </div>
             </div>
 

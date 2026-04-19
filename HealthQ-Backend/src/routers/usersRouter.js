@@ -80,6 +80,15 @@ userRouter.post("/register", async (req, res) => {
       title, name, lastname, gender, identificationNumber, phone, birthDate, nationality, email, username, password, role_id 
     });
 
+    // ตรวจสอบว่าถ้าต้องรอการอนุมัติ (status pending) จะไม่ออก Token ให้ทันที
+    // หมายเหตุ: createUser ควรคืนค่า status มาด้วย หรือเราเช็คเงื่อนไขตาม role_id
+    // ในที่นี้สมมติว่าถ้าเป็นผู้ใช้ทั่วไป (role_id 3) จะต้องรออนุมัติ
+    if (role_id === 3) {
+      return res.status(201).json({
+        message: "ลงทะเบียนสำเร็จ กรุณารอผู้ดูแลระบบอนุมัติการใช้งาน",
+        data: user
+      });
+    }
 
     const token = jwt.sign(
       { userId: user.id, role: user.role_id, email: user.email },
@@ -157,6 +166,14 @@ userRouter.post("/login", async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: "รหัสผ่านไม่ถูกต้อง" });
+    }
+
+    // ตรวจสอบสถานะการอนุมัติ (ถ้าเป็น pending จะไม่ให้เข้าสู่ระบบ)
+    if (user.status === 'pending') {
+      return res.status(403).json({ 
+        message: "บัญชีของคุณอยู่ระหว่างรอการอนุมัติจากผู้ดูแลระบบ",
+        status: "pending"
+      });
     }
 
     const token = jwt.sign(
