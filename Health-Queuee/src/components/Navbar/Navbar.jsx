@@ -30,7 +30,7 @@ export default function NavigationBar() {
   };
 
   const displayName = currentUser
-    ? currentUser.fullname || currentUser.name || currentUser.email
+    ? currentUser.name ? `${currentUser.name} ${currentUser.lastname || ''}`.trim() : currentUser.fullname || currentUser.username || currentUser.email
     : null;
 
   return (

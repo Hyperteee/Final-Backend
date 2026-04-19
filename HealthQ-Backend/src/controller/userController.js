@@ -67,6 +67,36 @@ export const getUserByUsername = async (username) => {
   return result[0];
 };
 
+// เพิ่มฟังก์ชันดึงข้อมูลผู้ใช้ด้วย ID (ใช้ในหน้า Profile)
+export const getUserById = async (id) => {
+  const sql = "SELECT id, title, name, lastname, gender, identification_number, phone, birth_date, nationality, email, username, role_id, status FROM users WHERE id = ?";
+  const result = await query(sql, [id]);
+  return result[0];
+};
+
+// เพิ่มฟังก์ชันอัปเดตข้อมูลส่วนตัวผู้ใช้งาน (ใช้ในหน้า Profile)
+export const updateUserProfile = async (id, data) => {
+  const { title, name, lastname, gender, identificationNumber, phone, birthDate, email } = data;
+  const sql = `
+    UPDATE users 
+    SET title = ?, name = ?, lastname = ?, gender = ?, 
+        identification_number = ?, phone = ?, birth_date = ?, email = ?
+    WHERE id = ?
+  `;
+  const params = [
+    title || null, 
+    name || null, 
+    lastname || null, 
+    gender || null, 
+    identificationNumber || null, 
+    phone || null, 
+    birthDate || null, 
+    email || null, 
+    id
+  ];
+  return await query(sql, params);
+};
+
 export const getRoleNamebyUserId = async (id) => {
   const sql = `SELECT users.id AS id, users.username AS name, roles.name AS role
   FROM users RIGHT JOIN roles ON users.role_id = roles.id

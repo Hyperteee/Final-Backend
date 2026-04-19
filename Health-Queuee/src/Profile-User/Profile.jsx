@@ -1,23 +1,46 @@
 import { useEffect, useState } from "react";
-import { User, CreditCard, Calendar, Lock, Shield, LogOut } from "lucide-react";
+import { User, CreditCard, Calendar, Lock, Shield, LogOut, Edit, Save, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function Profile() {
-  const handleSubmit = (e) => {
-    e.preventDefault();
-  };
-
-  const [users, setUsers] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
+  
+  // เพิ่ม state สำหรับจัดการข้อมูลฟอร์ม และ โหมดการแก้ไข
+  const [formData, setFormData] = useState({});
+  const [isEditing, setIsEditing] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const storedUsers = JSON.parse(localStorage.getItem("users")) || [];
-    setUsers(storedUsers);
     const loggedInUser = JSON.parse(localStorage.getItem("currentUser"));
-    setCurrentUser(loggedInUser);
-  }, []);
+    if (loggedInUser && loggedInUser.id) {
+      // ยิง API ดึงข้อมูลส่วนตัวของผู้ใช้งานจากฐานข้อมูล
+      fetch(`http://localhost:3000/users/profile/${loggedInUser.id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          setCurrentUser(data);
+          
+          // แปลงวันที่ให้อยู่ในรูปแบบ YYYY-MM-DD สำหรับ input type="date"
+          let formattedDate = "";
+          if (data.birth_date) {
+            const d = new Date(data.birth_date);
+            formattedDate = d.toISOString().split("T")[0];
+          }
+
+          // จัดเตรียมข้อมูลเริ่มต้นสำหรับฟอร์ม
+          setFormData({
+            ...data,
+            birthDate: formattedDate,
+            identificationNumber: data.identification_number // แมปชื่อตัวแปรให้ตรงกัน
+          });
+        })
+        .catch((err) => console.error("Error fetching profile:", err));
+    } else {
+      navigate("/login");
+    }
+  }, [navigate]);
 
   const calculateAge = (birthdate) => {
+    if (!birthdate) return "NaN";
     const today = new Date();
     const birth = new Date(birthdate);
 
@@ -28,16 +51,62 @@ export default function Profile() {
     if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
       age--;
     }
-
-    const handleLogout = () => {
-      localStorage.removeItem("currentUser");
-      navigate("/login");
-    };
-
-    return age;
+    return isNaN(age) ? "NaN" : age;
   };
 
-  const navigate = useNavigate();
+  const handleLogout = () => {
+    localStorage.removeItem("currentUser");
+    navigate("/login");
+  };
+
+  // ฟังก์ชันสำหรับรับค่าจากอินพุตเพื่อเก็บใน state formData
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  // ฟังก์ชันสำหรับการบันทึกข้อมูล (ยิง PUT Request)
+  const handleSave = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`http://localhost:3000/users/profile/${currentUser.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: formData.title,
+          name: formData.name,
+          lastname: formData.lastname,
+          gender: formData.gender,
+          identificationNumber: formData.identificationNumber,
+          phone: formData.phone,
+          birthDate: formData.birthDate,
+          email: formData.email,
+        }),
+      });
+
+      const result = await res.json();
+      if (res.ok) {
+        alert("อัปเดตข้อมูลสำเร็จ");
+        setIsEditing(false); // ปิดโหมดแก้ไข
+        
+        // อัปเดตข้อมูลที่แสดงบนหน้าจอทันที
+        setCurrentUser(result.data);
+        
+        // อัปเดตข้อมูลใน Local Storage บางส่วนเพื่อความสอดคล้อง
+        const localUser = JSON.parse(localStorage.getItem("currentUser"));
+        localStorage.setItem("currentUser", JSON.stringify({
+           ...localUser, 
+           name: result.data.name,
+           email: result.data.email
+        }));
+      } else {
+        alert("เกิดข้อผิดพลาด: " + result.message);
+      }
+    } catch (err) {
+      console.error("Error updating profile:", err);
+      alert("ไม่สามารถอัปเดตข้อมูลได้");
+    }
+  };
 
   return (
     <div className="bg-light min-vh-100">
@@ -105,7 +174,10 @@ export default function Profile() {
               </div>
 
               <div className="card-footer bg-white border-top p-3">
-                <button className="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2">
+                <button 
+                  onClick={handleLogout}
+                  className="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2"
+                >
                   <LogOut size={18} />
                   ออกจากระบบ
                 </button>
@@ -114,97 +186,218 @@ export default function Profile() {
           </div>
 
           <div className="col-lg-9">
-            <form onSubmit="user-Profile">
-              <div className="card shadow-sm border-0">
-                <div className="card-body p-4 p-lg-5">
-                  <form onSubmit={handleSubmit}>
-                    <div className="mb-4">
-                      <label className="form-label fw-medium text-secondary">
-                        เบอร์โทรศัพท์
-                      </label>
+            {/* ฟอร์มสำหรับการแสดงผลและแก้ไขข้อมูล */}
+            <div className="card shadow-sm border-0">
+              <div className="card-body p-4 p-lg-5">
+                <div className="d-flex justify-content-between align-items-center mb-4">
+                  <h4 className="fw-bold mb-0">ข้อมูลส่วนบุคคล</h4>
+                  {!isEditing ? (
+                    <button 
+                      className="btn btn-primary d-flex align-items-center gap-2"
+                      onClick={() => setIsEditing(true)}
+                    >
+                      <Edit size={18} /> แก้ไขข้อมูล
+                    </button>
+                  ) : (
+                    <div className="d-flex gap-2">
+                      <button 
+                        className="btn btn-secondary d-flex align-items-center gap-2"
+                        onClick={() => {
+                          setIsEditing(false);
+                          // รีเซ็ตฟอร์มกลับไปเป็นค่าเดิม
+                          setFormData({
+                            ...currentUser,
+                            birthDate: currentUser?.birth_date ? new Date(currentUser.birth_date).toISOString().split("T")[0] : "",
+                            identificationNumber: currentUser?.identification_number
+                          });
+                        }}
+                      >
+                        <X size={18} /> ยกเลิก
+                      </button>
+                      <button 
+                        className="btn btn-success d-flex align-items-center gap-2"
+                        onClick={handleSave}
+                      >
+                        <Save size={18} /> บันทึกข้อมูล
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <form>
+                  <div className="mb-4">
+                    <label className="form-label fw-medium text-secondary">
+                      เบอร์โทรศัพท์
+                    </label>
+                    {isEditing ? (
+                      <input 
+                        type="text" 
+                        className="form-control" 
+                        name="phone"
+                        value={formData.phone || ""}
+                        onChange={handleInputChange}
+                      />
+                    ) : (
                       <div className="fs-5 fw-semibold text-success">
                         {currentUser?.phone || "ไม่พบข้อมูล"}
                       </div>
-                    </div>
+                    )}
+                  </div>
 
-                    <div className="mb-4">
-                      <label className="form-label fw-medium text-secondary">
-                        คำนำหน้าชื่อ
-                      </label>
-                      <p className="form-control border rounded px-2 py-2 bg-light">
+                  <div className="mb-4">
+                    <label className="form-label fw-medium text-secondary">
+                      คำนำหน้าชื่อ
+                    </label>
+                    {isEditing ? (
+                      <select 
+                        className="form-select" 
+                        name="title" 
+                        value={formData.title || ""} 
+                        onChange={handleInputChange}
+                      >
+                        <option value="">เลือกคำนำหน้า</option>
+                        <option value="นาย">นาย</option>
+                        <option value="นาง">นาง</option>
+                        <option value="นางสาว">นางสาว</option>
+                      </select>
+                    ) : (
+                      <p className="form-control border rounded px-2 py-2 bg-light m-0">
                         {currentUser?.title || "ไม่พบข้อมูล"}
                       </p>
-                    </div>
+                    )}
+                  </div>
 
-                    <div className="mb-4">
-                      <label className="form-label fw-medium text-secondary">
-                        ชื่อ
-                      </label>
-                      <p className="form-control border rounded px-2 py-2 bg-light">
+                  <div className="mb-4">
+                    <label className="form-label fw-medium text-secondary">
+                      ชื่อ
+                    </label>
+                    {isEditing ? (
+                      <input 
+                        type="text" 
+                        className="form-control" 
+                        name="name"
+                        value={formData.name || ""}
+                        onChange={handleInputChange}
+                      />
+                    ) : (
+                      <p className="form-control border rounded px-2 py-2 bg-light m-0">
                         {currentUser?.name || "ไม่พบข้อมูล"}
                       </p>
-                    </div>
+                    )}
+                  </div>
 
-                    <div className="mb-4">
-                      <label className="form-label fw-medium text-secondary">
-                        นามสกุล
-                      </label>
-                      <p className="form-control border rounded px-2 py-2 bg-light">
+                  <div className="mb-4">
+                    <label className="form-label fw-medium text-secondary">
+                      นามสกุล
+                    </label>
+                    {isEditing ? (
+                      <input 
+                        type="text" 
+                        className="form-control" 
+                        name="lastname"
+                        value={formData.lastname || ""}
+                        onChange={handleInputChange}
+                      />
+                    ) : (
+                      <p className="form-control border rounded px-2 py-2 bg-light m-0">
                         {currentUser?.lastname || "ไม่พบข้อมูล"}
                       </p>
-                    </div>
+                    )}
+                  </div>
 
-                    <div className="mb-4">
-                      <label className="form-label fw-medium text-secondary">
-                        เลขบัตรประชาชน
-                      </label>
-                      <p className="form-control border rounded px-2 py-2 bg-light">
-                        {currentUser?.identificationNumber || "ไม่พบข้อมูล"}
+                  <div className="mb-4">
+                    <label className="form-label fw-medium text-secondary">
+                      เลขบัตรประชาชน
+                    </label>
+                    {isEditing ? (
+                      <input 
+                        type="text" 
+                        className="form-control" 
+                        name="identificationNumber"
+                        value={formData.identificationNumber || ""}
+                        onChange={handleInputChange}
+                      />
+                    ) : (
+                      <p className="form-control border rounded px-2 py-2 bg-light m-0">
+                        {currentUser?.identification_number || "ไม่พบข้อมูล"}
                       </p>
-                    </div>
+                    )}
+                  </div>
 
-                    <div className="row mb-4">
-                      <div className="col-md-8">
-                        <label className="form-label fw-medium text-secondary">
-                          วัน/เดือน/ปีเกิด
-                        </label>
-                        <p className="form-control border rounded px-2 py-2 bg-light">
-                          {currentUser?.birthDate || "ไม่พบข้อมูล"}
+                  <div className="row mb-4">
+                    <div className="col-md-8">
+                      <label className="form-label fw-medium text-secondary">
+                        วัน/เดือน/ปีเกิด
+                      </label>
+                      {isEditing ? (
+                        <input 
+                          type="date" 
+                          className="form-control" 
+                          name="birthDate"
+                          value={formData.birthDate || ""}
+                          onChange={handleInputChange}
+                        />
+                      ) : (
+                        <p className="form-control border rounded px-2 py-2 bg-light m-0">
+                          {currentUser?.birth_date ? new Date(currentUser.birth_date).toLocaleDateString('th-TH') : "ไม่พบข้อมูล"}
                         </p>
-                      </div>
-                      <div className="col-md-4">
-                        <label className="form-label fw-medium text-secondary">
-                          อายุ
-                        </label>
-                        <div className="fs-5 fw-semibold text-success">
-                          {calculateAge(currentUser?.birthDate)} ปี
-                        </div>
+                      )}
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label fw-medium text-secondary">
+                        อายุ
+                      </label>
+                      <div className="fs-5 fw-semibold text-success mt-1">
+                        {calculateAge(currentUser?.birth_date)} ปี
                       </div>
                     </div>
+                  </div>
 
-                    <div className="mb-4">
-                      <label className="form-label fw-medium text-secondary">
-                        เพศ
-                      </label>
+                  <div className="mb-4">
+                    <label className="form-label fw-medium text-secondary">
+                      เพศ
+                    </label>
+                    {isEditing ? (
+                      <select 
+                        className="form-select" 
+                        name="gender" 
+                        value={formData.gender || ""} 
+                        onChange={handleInputChange}
+                      >
+                        <option value="">เลือกเพศ</option>
+                        <option value="ชาย">ชาย</option>
+                        <option value="หญิง">หญิง</option>
+                        <option value="อื่นๆ">อื่นๆ</option>
+                      </select>
+                    ) : (
                       <div className="fs-5 fw-semibold text-success">
-                        {currentUser?.gender}
+                        {currentUser?.gender || "ไม่ระบุ"}
                       </div>
-                    </div>
+                    )}
+                  </div>
 
-                    <div className="mb-4">
-                      <label className="form-label fw-medium text-secondary">
-                        อีเมล
-                      </label>
-                      <p className="form-control border rounded px-2 py-2 bg-light">
+                  <div className="mb-4">
+                    <label className="form-label fw-medium text-secondary">
+                      อีเมล
+                    </label>
+                    {isEditing ? (
+                      <input 
+                        type="email" 
+                        className="form-control" 
+                        name="email"
+                        value={formData.email || ""}
+                        onChange={handleInputChange}
+                      />
+                    ) : (
+                      <p className="form-control border rounded px-2 py-2 bg-light m-0">
                         {currentUser?.email || "ไม่พบข้อมูล"}
                       </p>
-                    </div>
+                    )}
+                  </div>
 
-                    <div className="d-flex justify-content-end mt-5"></div>
-                  </form>
-                </div>
+                </form>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       </div>

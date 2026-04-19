@@ -169,36 +169,42 @@ export default function DoctorList() {
   };
 
   return (
-    <>
-      <section className="doctor-page py-5">
-        <div className="doctor-wrapper">
-          <div className="doctor-filter-card rounded-4 shadow-sm p-4 mb-4">
+    <div className="bg-light min-vh-100 py-5">
+      <div className="container">
+        <h1 className="text-center mb-3 fw-semibold text-black">รายชื่อแพทย์</h1>
+        <div className="d-flex justify-content-center mb-5">
+          <div style={{ height: "4px", width: "100px", backgroundColor: "#001B45", borderRadius: "2px" }}></div>
+        </div>
+
+        {/* Filter Card */}
+        <div className="card shadow-sm border-0 rounded-4 mb-4">
+          <div className="card-body p-4">
             <div className="row g-3">
-              <div className="col-12">
-                <label className="form-label small">Department</label>
-                <select className="form-select rounded-3" value={dept} onChange={(e) => setDept(e.target.value)}>
+              <div className="col-md-4 col-12">
+                <label className="form-label fw-medium text-secondary">Department (แผนก)</label>
+                <select className="form-select border-0 bg-light" value={dept} onChange={(e) => setDept(e.target.value)}>
                   {departmentOptions.map((option) => (
                     <option key={option}>{option}</option>
                   ))}
                 </select>
               </div>
-              <div className="col-12">
-                <label className="form-label small">Hospital</label>
-                <select className="form-select rounded-3" value={hospital} onChange={(e) => setHospital(e.target.value)}>
+              <div className="col-md-4 col-12">
+                <label className="form-label fw-medium text-secondary">Hospital (โรงพยาบาล)</label>
+                <select className="form-select border-0 bg-light" value={hospital} onChange={(e) => setHospital(e.target.value)}>
                   {hospitalOptions.map((option) => (
                     <option key={option}>{option}</option>
                   ))}
                 </select>
               </div>
-              <div className="col-12">
-                <label className="form-label small">Search</label>
-                <div className="input-group rounded-3">
-                  <span className="input-group-text bg-white border-end-0">
+              <div className="col-md-4 col-12">
+                <label className="form-label fw-medium text-secondary">Search (ค้นหาชื่อแพทย์)</label>
+                <div className="input-group">
+                  <span className="input-group-text bg-light border-0">
                     <i className="bi bi-search text-muted" />
                   </span>
                   <input
-                    className="form-control border-start-0"
-                    placeholder="Find doctor or specialty"
+                    className="form-control bg-light border-0"
+                    placeholder="Find doctor or specialty..."
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
                   />
@@ -206,184 +212,221 @@ export default function DoctorList() {
               </div>
             </div>
           </div>
+        </div>
 
-          <div className="doctor-summary d-flex justify-content-between align-items-center mb-3">
-            <div>
-              <h5 className="mb-0">Doctors</h5>
-              <small>Found {filteredDoctors.length} doctors</small>
-            </div>
-            <div className="badge text-bg-light rounded-pill px-3 py-2">
-              Page {step} / {totalSteps}
-            </div>
+        {/* Summary Info */}
+        <div className="d-flex flex-wrap justify-content-between align-items-center mb-3 px-2">
+          <div>
+            <h5 className="mb-0 fw-semibold text-dark">Doctors List</h5>
+            <small className="text-muted">Found {filteredDoctors.length} doctors</small>
           </div>
-
-          <div className="doctor-results-panel">
-            {pageDoctors.length > 0 ? (
-              <div className="doctor-card-grid">
-                {pageDoctors.map((doctor, idx) => {
-                  const logoSrc = resolveAssetPath(doctor.hospitalLogo);
-                  const rank = startIndex + idx + 1;
-                  const rankClassMap = {
-                    1: "doctor-card__rank doctor-card__rank--gold",
-                    2: "doctor-card__rank doctor-card__rank--silver",
-                    3: "doctor-card__rank doctor-card__rank--bronze",
-                    4: "doctor-card__rank doctor-card__rank--default",
-                  };
-                  const rankClass = rankClassMap[rank];
-                  const avatarPath = getDoctorAvatarPath(doctor);
-                  const avatarSrc = avatarPath ? resolveAssetPath(avatarPath) : "";
-                  const avatarClassName = `doctor-card__avatar${avatarSrc ? " doctor-card__avatar--image" : ""}`;
-                  return (
-                    <div className="doctor-card-grid__item" key={doctor.id}>
-                      <div className="card border-0 shadow-sm rounded-4 position-relative h-100 doctor-card">
-                        {rankClass && <div className={rankClass}>Top {rank}</div>}
-                        {logoSrc && (
-                          <div className="doctor-card__logo">
-                            <img src={logoSrc} alt={doctor.hospital} />
-                          </div>
-                        )}
-                        <div className="card-body text-center pt-4 pb-4 d-flex flex-column align-items-center doctor-card__body">
-                          <div className={avatarClassName}>
-                            {avatarSrc ? (
-                              <img src={avatarSrc} alt={doctor.name || "Doctor avatar"} />
-                            ) : (
-                              <span className="fw-semibold">{getInitials(doctor.name)}</span>
-                            )}
-                          </div>
-                          <p className="fw-semibold doctor-card__name mt-3 mb-1 text-truncate w-100">
-                            {doctor.name || "Unnamed doctor"}
-                          </p>
-                          <p className="small mb-1 doctor-card__subtitle">{doctor.dept}</p>
-                          <p className="small mb-3 doctor-card__hospital">{doctor.hospital}</p>
-                          {doctor.specialization && <p className="small text-secondary mb-3">{doctor.specialization}</p>}
-                          <div className="d-grid gap-2 w-100 mt-auto doctor-card__actions">
-                            <button
-                              onClick={() => {
-                                // find department id from hospitalMap using hospital name + department name
-                                const hospitalEntry = Object.values(hospitalMap).find(h => h.info?.name === doctor.hospital);
-                                const deptObj = hospitalEntry?.info?.departments?.find(d => d.name === doctor.dept);
-                                const deptId = deptObj?.id ?? doctor.dept;
-                                navigate("/queue3", { state: { selectedHospital: doctor.hospital, selectedDepartment: deptId, selectedDoctor: doctor.id } });
-                              }}
-                              className="btn btn-primary rounded-pill py-2"
-                            >
-                              Book
-                            </button>
-                            <button className="btn btn-outline-secondary rounded-pill py-2" onClick={() => handleOpenProfile(doctor)}>
-                              View profile
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="text-center py-5 doctor-empty mb-0">No doctors match the current filters.</p>
-            )}
-          </div>
-
-          <div className="doctor-pagination">
-            <div className="doctor-pagination__panel shadow-sm p-3 d-flex gap-3 justify-content-between">
-              <button className="btn btn-outline-secondary flex-fill rounded-pill" onClick={handlePrev} disabled={step === 1}>
-                Previous
-              </button>
-              <button
-                className="btn btn-primary flex-fill rounded-pill"
-                onClick={handleNext}
-                disabled={step === totalSteps || filteredDoctors.length === 0}
-              >
-                Next
-              </button>
-            </div>
+          <div className="bg-white border rounded-pill px-3 py-1 shadow-sm text-secondary small fw-medium">
+            Page {step} of {totalSteps}
           </div>
         </div>
-      </section>
+
+        {/* Results Grid */}
+        {pageDoctors.length > 0 ? (
+          <div className="row g-4 mb-5">
+            {pageDoctors.map((doctor, idx) => {
+              const avatarPath = getDoctorAvatarPath(doctor);
+              const avatarSrc = avatarPath ? resolveAssetPath(avatarPath) : "";
+              const logoSrc = resolveAssetPath(doctor.hospitalLogo);
+              
+              return (
+                <div className="col-lg-3 col-md-4 col-sm-6" key={doctor.id}>
+                  <div className="card shadow-sm border-0 h-100 rounded-4 text-center profile-card-hover transition-all">
+                    <div className="card-body p-4 d-flex flex-column align-items-center">
+                      
+                      {/* Avatar */}
+                      <div 
+                        className="rounded-circle overflow-hidden mb-3 shadow-sm" 
+                        style={{ width: "90px", height: "90px", backgroundColor: "#e9ecef" }}
+                      >
+                        {avatarSrc ? (
+                          <img src={avatarSrc} alt={doctor.name || "Doctor"} className="w-100 h-100" style={{ objectFit: "cover" }} />
+                        ) : (
+                          <div className="w-100 h-100 d-flex align-items-center justify-content-center text-secondary fw-bold fs-4">
+                            {getInitials(doctor.name)}
+                          </div>
+                        )}
+                      </div>
+
+                      <h5 className="fw-bold text-dark mb-1 text-truncate w-100" title={doctor.name || "Unnamed doctor"}>
+                        {doctor.name || "Unnamed doctor"}
+                      </h5>
+                      <p className="text-primary fw-medium small mb-2">{doctor.dept}</p>
+                      
+                      {/* Hospital Tag */}
+                      <div className="bg-light rounded-pill px-3 py-1 mb-2">
+                        <small className="text-muted d-block text-truncate w-100" style={{ maxWidth: "150px" }} title={doctor.hospital}>
+                          <i className="bi bi-building me-1"></i> {doctor.hospital}
+                        </small>
+                      </div>
+
+                      {doctor.specialization && (
+                         <small className="text-secondary mb-3 d-block lines-2">{doctor.specialization}</small>
+                      )}
+
+                      <div className="mt-auto w-100 d-grid gap-2">
+                        <button
+                          onClick={() => {
+                            const hospitalEntry = Object.values(hospitalMap).find(h => h.info?.name === doctor.hospital);
+                            const deptObj = hospitalEntry?.info?.departments?.find(d => d.name === doctor.dept);
+                            const deptId = deptObj?.id ?? doctor.dept;
+                            navigate("/queue3", { state: { selectedHospital: doctor.hospital, selectedDepartment: deptId, selectedDoctor: doctor.id } });
+                          }}
+                          className="btn btn-primary rounded-pill btn-sm border-0 py-2 fw-medium shadow-none"
+                          style={{ backgroundColor: "#001B45" }}
+                        >
+                          ทำการนัดหมาย
+                        </button>
+                        <button 
+                          className="btn btn-outline-secondary rounded-pill btn-sm py-2 fw-medium shadow-none"
+                          onClick={() => handleOpenProfile(doctor)}
+                        >
+                          ดูประวัติ
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-5 my-5 bg-white rounded-4 shadow-sm border-0">
+            <i className="bi bi-search text-muted opacity-50 mb-3" style={{ fontSize: "3rem" }}></i>
+            <h5 className="text-muted fw-normal">ไม่พบรายชื่อแพทย์ที่ตรงตามเงื่อนไข</h5>
+          </div>
+        )}
+
+        {/* Pagination */}
+        <div className="d-flex justify-content-center align-items-center gap-3">
+          <button 
+            className="btn btn-outline-secondary rounded-pill px-4 fw-medium bg-white" 
+            onClick={handlePrev} 
+            disabled={step === 1}
+          >
+            ก่อนหน้า
+          </button>
+          <span className="text-muted small fw-medium">หน้าที่ {step} จาก {totalSteps}</span>
+          <button
+            className="btn btn-primary rounded-pill px-4 fw-medium border-0"
+            style={{ backgroundColor: "#001B45" }}
+            onClick={handleNext}
+            disabled={step === totalSteps || filteredDoctors.length === 0}
+          >
+            ถัดไป
+          </button>
+        </div>
+      </div>
+
+      {/* Profile Modal Overlay */}
       {isProfileOpen && selectedDoctor && (
-        <div className="doctor-profile-modal" role="dialog" aria-modal="true" aria-label={`${selectedDoctor.name} profile`} onClick={handleCloseProfile}>
-          <div className="doctor-profile-modal__panel" onClick={(event) => event.stopPropagation()} role="document">
-            <button type="button" className="doctor-profile-modal__close btn-close" aria-label="Close profile" onClick={handleCloseProfile} />
-            <div className="doctor-profile-modal__header">
+        <div 
+          className="position-fixed inset-0 min-vh-100 w-100 d-flex align-items-center justify-content-center p-3" 
+          style={{ zIndex: 9999, backgroundColor: "rgba(0,0,0,0.5)", top: 0, left: 0 }} 
+          onClick={handleCloseProfile}
+        >
+          <div 
+            className="bg-white rounded-4 shadow-lg overflow-hidden position-relative" 
+            style={{ maxWidth: "600px", width: "100%", maxHeight: "90vh", overflowY: "auto" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <button 
+              className="btn-close position-absolute top-0 end-0 m-3 bg-light p-2 rounded-circle shadow-sm" 
+              onClick={handleCloseProfile}
+              aria-label="Close"
+            ></button>
+
+            {/* Header / Avatar */}
+            <div className="bg-light p-4 text-center border-bottom">
               {(() => {
                 const avatarPath = getDoctorAvatarPath(selectedDoctor);
                 const avatarSrc = avatarPath ? resolveAssetPath(avatarPath) : "";
-                const avatarClassName = `doctor-profile-modal__avatar${avatarSrc ? " doctor-profile-modal__avatar--image" : ""}`;
                 return (
-                  <div className={avatarClassName}>
-                    {avatarSrc ? <img src={avatarSrc} alt={selectedDoctor.name || "Doctor avatar"} /> : <span>{getInitials(selectedDoctor.name)}</span>}
+                  <div 
+                    className="rounded-circle overflow-hidden shadow-sm mx-auto mb-3 border border-3 border-white" 
+                    style={{ width: "110px", height: "110px", backgroundColor: "#e9ecef" }}
+                  >
+                    {avatarSrc ? (
+                      <img src={avatarSrc} alt={selectedDoctor.name} className="w-100 h-100" style={{ objectFit: "cover" }} />
+                    ) : (
+                      <div className="w-100 h-100 d-flex align-items-center justify-content-center text-secondary fw-bold fs-2">
+                        {getInitials(selectedDoctor.name)}
+                      </div>
+                    )}
                   </div>
                 );
               })()}
-              <div className="doctor-profile-modal__identity">
-                <h4 className="mb-1">{selectedDoctor.name || "Unnamed doctor"}</h4>
-                <p className="mb-1 text-muted">{selectedDoctor.specialization || "General practitioner"}</p>
-                <div className="doctor-profile-modal__tags">
-                  {selectedDoctor.dept && <span className="badge rounded-pill bg-primary-subtle text-primary">{selectedDoctor.dept}</span>}
-                  {selectedDoctor.hospital && <span className="badge rounded-pill bg-light text-dark">{selectedDoctor.hospital}</span>}
-                </div>
+              <h4 className="fw-bold mb-1 text-dark">{selectedDoctor.name || "Unnamed doctor"}</h4>
+              <p className="text-secondary mb-2">{selectedDoctor.specialization || "General practitioner"}</p>
+              <div className="d-flex justify-content-center gap-2">
+                {selectedDoctor.dept && <span className="badge bg-primary-subtle text-primary rounded-pill px-3 py-2 border border-primary-subtle">{selectedDoctor.dept}</span>}
+                {selectedDoctor.hospital && <span className="badge bg-light text-dark rounded-pill px-3 py-2 border">{selectedDoctor.hospital}</span>}
               </div>
             </div>
-            <div className="doctor-profile-modal__body">
-              <div className="doctor-profile-modal__section">
-                <h6>Hospital</h6>
-                <div className="doctor-profile-modal__hospital">
-                  {selectedDoctor.hospitalLogo && (
-                    <div className="doctor-profile-modal__hospital-logo">
-                      <img src={resolveAssetPath(selectedDoctor.hospitalLogo)} alt={selectedDoctor.hospital} />
-                    </div>
-                  )}
-                  <div>
-                    <p className="mb-0 fw-semibold">{selectedDoctor.hospital || "N/A"}</p>
-                    <small className="text-muted">{selectedDoctor.dept || "Department not specified"}</small>
+
+            {/* Details */}
+            <div className="p-4">
+              <div className="mb-4 bg-light rounded-3 p-3 d-flex align-items-center gap-3 border">
+                {selectedDoctor.hospitalLogo ? (
+                  <div className="bg-white rounded p-1 border shadow-sm" style={{ width: "50px", height: "50px" }}>
+                    <img src={resolveAssetPath(selectedDoctor.hospitalLogo)} alt={selectedDoctor.hospital} className="w-100 h-100" style={{ objectFit: "contain" }} />
                   </div>
+                ) : (
+                  <div className="bg-white rounded p-1 border shadow-sm d-flex align-items-center justify-content-center" style={{ width: "50px", height: "50px" }}>
+                    <i className="bi bi-building text-muted fs-4"></i>
+                  </div>
+                )}
+                <div>
+                  <h6 className="fw-bold text-dark mb-0">{selectedDoctor.hospital || "N/A"}</h6>
+                  <small className="text-muted">{selectedDoctor.dept || "Department not specified"}</small>
                 </div>
               </div>
+
               {selectedDoctor.education && (
-                <div className="doctor-profile-modal__section">
-                  <h6>ประวัติการศึกษา</h6>
-                  <p className="mb-0">{selectedDoctor.education}</p>
+                <div className="mb-4">
+                  <h6 className="fw-bold text-dark d-flex align-items-center gap-2 mb-2">
+                    <i className="bi bi-mortarboard-fill text-secondary"></i> ประวัติการศึกษา
+                  </h6>
+                  <p className="text-secondary small mb-0 lh-lg">{selectedDoctor.education}</p>
                 </div>
               )}
+
               {selectedDoctor.bio && (
-                <div className="doctor-profile-modal__section">
-                  <h6>ประวัติย่อ</h6>
-                  <p className="mb-0">{selectedDoctor.bio}</p>
+                <div className="mb-4">
+                  <h6 className="fw-bold text-dark d-flex align-items-center gap-2 mb-2">
+                    <i className="bi bi-person-lines-fill text-secondary"></i> ประวัติย่อ
+                  </h6>
+                  <p className="text-secondary small mb-0 lh-lg">{selectedDoctor.bio}</p>
                 </div>
               )}
-              {Array.isArray(selectedDoctor.schedule) && selectedDoctor.schedule.length > 0 && (
-                <div className="doctor-profile-modal__section">
-                  <h6>Available slots</h6>
-                  <ul className="doctor-profile-modal__schedule list-unstyled mb-0">
-                    {selectedDoctor.schedule.map((slot, idx) => (
-                      <li key={`${slot?.day || "day"}-${slot?.time || "time"}-${idx}`}>
-                        <span>{slot?.day || "—"}</span>
-                        <span>{slot?.time || "—"}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-            <div className="doctor-profile-modal__actions">
-              <button
-                onClick={() => {
-                  const hospitalEntry = Object.values(hospitalMap).find(h => h.info?.name === selectedDoctor.hospital);
-                  const deptObj = hospitalEntry?.info?.departments?.find(d => d.name === selectedDoctor.dept);
-                  const deptId = deptObj?.id ?? selectedDoctor.dept;
-                  navigate("/queue3", { state: { selectedHospital: selectedDoctor.hospital, selectedDepartment: deptId, selectedDoctor: selectedDoctor.id } });
-                }}
-                className="btn btn-primary rounded-pill px-4"
-              >
-                Book appointment
-              </button>
-              <button className="btn btn-outline-secondary rounded-pill px-4" onClick={handleCloseProfile}>
-                Close
-              </button>
+
+              {/* Actions Footer */}
+              <div className="d-flex flex-wrap gap-2 mt-4 pt-4 border-top">
+                <button
+                  onClick={() => {
+                    const hospitalEntry = Object.values(hospitalMap).find(h => h.info?.name === selectedDoctor.hospital);
+                    const deptObj = hospitalEntry?.info?.departments?.find(d => d.name === selectedDoctor.dept);
+                    const deptId = deptObj?.id ?? selectedDoctor.dept;
+                    navigate("/queue3", { state: { selectedHospital: selectedDoctor.hospital, selectedDepartment: deptId, selectedDoctor: selectedDoctor.id } });
+                  }}
+                  className="btn btn-primary rounded-pill px-4 fw-medium flex-grow-1"
+                  style={{ backgroundColor: "#001B45", border: "none" }}
+                >
+                  ทำการนัดหมายแพทย์
+                </button>
+                <button className="btn btn-light border rounded-pill px-4 fw-medium" onClick={handleCloseProfile}>
+                  ปิด
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
