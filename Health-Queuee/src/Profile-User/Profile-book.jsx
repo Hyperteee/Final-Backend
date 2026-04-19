@@ -137,9 +137,12 @@ function handleLogout(){
       return () => clearTimeout(timer);
     }
   }, [showSuccessModal]);
-  const myAppointments = appointments.filter(appt => 
-    currentUser && (appt.userId === currentUser.userId) 
-  )
+  const myAppointments = appointments.filter(appt => {
+    if (!currentUser) return false;
+    const apptUserId = String(appt.userId || appt.user_id);
+    const currUserId = String(currentUser.userId || currentUser.id);
+    return apptUserId === currUserId;
+  });
 
   return (
     <div className="bg-light min-vh-100">
