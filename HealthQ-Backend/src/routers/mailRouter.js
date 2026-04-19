@@ -1,151 +1,77 @@
 import express from "express";
-import nodemailer from "nodemailer";
-import dotenv from "dotenv";
+import { sendEmail } from "../utils/mailHelper.js";
 
-dotenv.config();
 const mailRouter = express.Router();
 
-
 /**
- * @swagger
- * /mail/send-email:
- *   post:
- *     summary: Send an email notification
- *     tags: [Mail]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - to
- *             properties:
- *               to: { type: string, format: email, description: "Recipient email address" }
- *               subject: { type: string, description: "Email subject" }
- *               text: { type: string, description: "Email text body" }
- *     responses:
- *       200:
- *         description: Email sent successfully
- *       400:
- *         description: Missing recipient email
- *       500:
- *         description: Error sending email
+ * [API สำหรับทดสอบส่งอีเมลทั่วไป]
+ * เรียกใช้ฟังก์ชัน sendEmail จาก mailHelper เพื่อลดความซ้ำซ้อนของโค้ด
  */
 mailRouter.post("/send-email", async (req, res) => { 
-    console.log("ได้รับข้อมูลแล้ว:", req.body);
+    console.log("[Mail Router] ได้รับข้อมูลการส่งเมลทดสอบ:", req.body);
     
     if (!req.body || !req.body.to) {
-        return res.status(400).json({ message: "ข้อมูลไม่ครบ" });
+        return res.status(400).json({ message: "ข้อมูลไม่ครบ (ต้องการอีเมลผู้รับ)" });
     }
 
-    const transporter = nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-            user: process.env.SMTP_MAIL,
-            pass: process.env.SMTP_PASS,
-        },
-    });
-
-    const mailOptions = {
-        from: process.env.SMTP_MAIL,
-        to: req.body.to, 
-        subject: req.body.subject,
-        text: req.body.text,
-        // html:
-        //     `<img src="https://cdn.discordapp.com/attachments/1288845074557304883/1485313222272880791/image.png?ex=69c1693b&is=69c017bb&hm=48cd49b115f34e4585f4f6770cd3164c61273f7d7eab9c88abcbe7553c667dc2&" alt="Loading..." width="200" height="200"/>`,
-    };
-
     try {
-        await transporter.sendMail(mailOptions);
-        res.status(200).json({ message: "Email sent successfully" });
+        // เรียกใช้ฟังก์ชันกลางที่เตรียมไว้
+        await sendEmail(req.body.to, req.body.subject, `<p>${req.body.text}</p>`);
+        res.status(200).json({ message: "ส่งอีเมลทดสอบสำเร็จ" });
     } catch (error) {
-        console.error("Error sending email:", error);
-        res.status(500).json({ message: "Error sending email" });
+        res.status(500).json({ message: "เกิดข้อผิดพลาดในการส่งอีเมล", error: error.message });
     }
 });
 
-const otpStore = {};
+const otpStore = {}; // เก็บ OTP ชั่วคราวใน RAM (ในการผลิตจริงควรใช้ Redis)
 
 function generateOtp() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
 /**
- * @swagger
- * /mail/send-otp-email:
- *   post:
- *     summary: Send an OTP email notification
- *     tags: [Mail]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - email
- *             properties:
- *               email: { type: string, format: email, description: "Recipient email address for OTP" }
- *     responses:
- *       200:
- *         description: OTP sent successfully
- *       400:
- *         description: Email is required
- *       500:
- *         description: Send OTP failed
+ * [API สำหรับส่งรหัส OTP]
+ * ปรับปรุงให้ใช้ mailHelper เพื่อความสะอาดของโค้ด
  */
 mailRouter.post("/send-otp-email", async (req, res) => {
   try {
     const { email } = req.body;
 
     if (!email) {
-      return res.status(400).json({ message: "Email is required" });
+      return res.status(400).json({ message: "กรุณาระบุอีเมล" });
     }
 
     const otp = generateOtp();
 
+    // เก็บ OTP ไว้ตรวจสอบ (หมดอายุใน 5 นาที)
     otpStore[email] = {
       otp,
       expiresAt: Date.now() + 5 * 60 * 1000,
     };
 
-    const transporter = nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-            user: process.env.SMTP_MAIL,
-            pass: process.env.SMTP_PASS,
-        },
-    });
-
-    await transporter.sendMail({
-      from: `"HealthQ" <${process.env.SMTP_MAIL}>`,
-      to: email,
-      subject: "Your OTP Code",
-      html: `
-        <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+    const htmlContent = `
+        <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; border: 1px solid #EEE; border-radius: 10px;">
             <div style="text-align: center; padding-bottom: 20px;">
-              <h2>Welcome to HFU!</h2>
+              <h2 style="color: #4F46E5;">ยินดีต้อนรับสู่ HFU!</h2>
             </div>
-            <p>Hello,</p>
-            <p>Your One-Time Password (OTP) for verification is:</p>
-            <div style="margin: 20px 0; font-size: 24px; font-weight: bold; color: #4F46E5; text-align: center;">
+            <p>สวัสดีครับ,</p>
+            <p>รหัสยืนยันตัวตน (OTP) ของคุณคือ:</p>
+            <div style="margin: 20px 0; font-size: 32px; font-weight: bold; color: #4F46E5; text-align: center; letter-spacing: 5px;">
               ${otp}
             </div>
-            <p>Please enter this code to complete your verification.</p>
-            <p><strong>Note:</strong> This OTP is valid for 5 minutes.</p>
-            <p>If you did not request this OTP, please ignore this email.</p>
-            <br />
-            <p>Best regards,<br/>The HFU Team</p>
+            <p>กรุณากรอกรหัสนี้ภายใน 5 นาทีเพื่อดำเนินการต่อ</p>
+            <hr style="border: none; border-top: 1px solid #EEE;">
+            <p style="font-size: 12px; color: #777;">หากคุณไม่ได้ขอนี้ รบกวนเพิกเฉยต่ออีเมลฉบับนี้ครับ</p>
         </div>
-      `
-    });
+    `;
 
-    return res.json({ message: "OTP sent successfully" });
+    await sendEmail(email, "Your OTP Code for HFU", htmlContent);
+
+    return res.json({ message: "ส่งรหัส OTP เรียบร้อยแล้ว" });
 
   } catch (error) {
     return res.status(500).json({
-      message: "Send OTP failed",
+      message: "ไม่สามารถส่ง OTP ได้",
       error: error.message,
     });
   }

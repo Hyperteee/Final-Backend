@@ -9,9 +9,10 @@ import {
   getAllUsers,
   updateUserRole,
   deleteUser,
-  getUserById,        // เพิ่ม import getUserById
-  updateUserProfile   // เพิ่ม import updateUserProfile
+  getUserById,
+  updateUserProfile
 } from "../controller/userController.js";
+import { sendEmail, getApprovalTemplate } from "../utils/mailHelper.js";
 
 
 
@@ -306,7 +307,23 @@ userRouter.put("/:id/role", async (req, res) => {
       return res.status(400).json({ message: "กรุณาระบุ role_id" });
     }
     
+    // 1. อัปเดตข้อมูลในฐานข้อมูล
     await updateUserRole(userId, role_id, status);
+
+    // 2. ถ้ามีการอนุมัติ (approved) ให้ส่งอีเมลแจ้งเตือน
+    if (status === 'approved') {
+      const user = await getUserById(userId);
+      if (user && user.email) {
+        const subject = "ยินดีด้วย! บัญชีของคุณได้รับการอนุมัติแล้ว (HealthQ)";
+        const htmlContent = getApprovalTemplate(user.name || user.username);
+        
+        // ส่งเมลแบบ Background (ไม่รอ await เพื่อให้ API ตอบกลับเร็ว)
+        sendEmail(user.email, subject, htmlContent).catch(err => {
+          console.error("[User Router] ส่งเมลอนุมัติไม่สำเร็จ:", err);
+        });
+      }
+    }
+
     return res.status(200).json({ message: "อัปเดตสิทธิ์ผู้ใช้สำเร็จ" });
   } catch (error) {
     console.error("Error updating user role:", error);

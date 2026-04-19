@@ -140,22 +140,52 @@ export const UserAppointmentProvider = ({ children }) => {
     }));
   };
 
-  const updateAppointmentStatus = (id, newStatus, extraData = {}) => {
-    setAppointments(prevAppointments => {
-      const updatedList = prevAppointments.map(appt => {
-        if (appt.id === id) {
-          return { ...appt, status: newStatus, ...extraData };
-        }
-        return appt;
+  /**
+   * [ฟังก์ชันอัปเดตสถานะนัดหมายที่เชื่อมต่อกับ Backend]
+   * เมื่อมีการเรียกใช้ ฟังก์ชันนี้จะส่งข้อมูลไปยัง Server เพื่ออัปเดตฐานข้อมูลและส่งอีเมลแจ้งเตือน
+   */
+  const updateAppointmentStatus = async (id, newStatus, extraData = {}) => {
+    try {
+      console.log(`[Appointment Context] กำลังอัปเดตสถานะรายการ ${id} เป็น ${newStatus}`);
+      
+      // 1. ส่งข้อมูลไปที่ Backend (API ที่เราสร้างขึ้นใหม่)
+      const response = await fetch(`http://localhost:3000/data/appointments/${id}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          status: newStatus, 
+          confirmedDate: extraData.confirmedDate,
+          confirmedTime: extraData.confirmedTime,
+          note: extraData.note || extraData.rejectReason
+        })
       });
 
-      const targetAppt = updatedList.find(a => a.id === id);
-      if (targetAppt && targetAppt.batchId) {
-        checkBatchCompletion(targetAppt.batchId, updatedList);
+      if (!response.ok) {
+        throw new Error("ไม่สามารถอัปเดตสถานะใน Server ได้");
       }
 
-      return updatedList;
-    });
+      // 2. อัปเดตข้อมูลใน Local State เพื่อให้ UI เปลี่ยนแปลงทันที
+      setAppointments(prevAppointments => {
+        const updatedList = prevAppointments.map(appt => {
+          if (appt.id === id) {
+            return { ...appt, status: newStatus, ...extraData };
+          }
+          return appt;
+        });
+
+        const targetAppt = updatedList.find(a => a.id === id);
+        if (targetAppt && targetAppt.batchId) {
+          checkBatchCompletion(targetAppt.batchId, updatedList);
+        }
+
+        return updatedList;
+      });
+
+      console.log(`[Appointment Context] อัปเดตสถานะสำเร็จ`);
+    } catch (error) {
+      console.error("[Appointment Context] เกิดข้อผิดพลาด:", error);
+      alert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์: " + error.message);
+    }
   };
 
   return (

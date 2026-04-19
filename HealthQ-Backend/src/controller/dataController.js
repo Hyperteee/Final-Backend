@@ -110,3 +110,52 @@ export const getAppointmentsData = async () => {
   const result = await query(sql);
   return result;
 };
+
+/**
+ * [ฟังก์ชันสำหรับอัปเดตสถานะนัดหมาย]
+ * ใช้สำหรับเปลี่ยนสถานะ เช่น จาก pending เป็น confirmed หรือ cancelled
+ * @param {number} id - รหัสการนัดหมาย
+ * @param {string} status - สถานะใหม่
+ * @param {object} details - ข้อมูลเพิ่มเติม (เช่น วันที่ยืนยัน, เวลา, หมายเหตุ)
+ */
+export const updateAppointmentStatus = async (id, status, details = {}) => {
+  const { confirmedDate, confirmedTime } = details;
+  
+  let sql = "UPDATE appointments SET status = ?";
+  const params = [status];
+
+  // ถ้ามีการส่งวันที่ยืนยันมา ให้บันทึกลงฐานข้อมูลด้วย
+  if (confirmedDate) {
+    sql += ", appointment_date = ?";
+    params.push(confirmedDate);
+  }
+  
+  // ถ้ามีการส่งเวลายืนยันมา ให้บันทึกลงฐานข้อมูลด้วย
+  if (confirmedTime) {
+    sql += ", appointment_time = ?";
+    params.push(confirmedTime);
+  }
+
+  sql += " WHERE id = ?";
+  params.push(id);
+  
+  console.log(`[Data Controller] อัปเดตสถานะนัดหมาย ID: ${id} (SQL: ${sql})`);
+  return await query(sql, params);
+};
+
+/**
+ * [ฟังก์ชันดึงอีเมลและชื่อผู้ใช้จากรหัสนัดหมาย]
+ * ใช้สำหรับระบุตัวตนผู้รับอีเมลแจ้งเตือน
+ */
+export const getUserEmailByAppointmentId = async (appointmentId) => {
+  const sql = `
+    SELECT u.email, u.name, h.name as hospital_name, a.appointment_date, a.appointment_time
+    FROM appointments a
+    JOIN users u ON a.user_id = u.id
+    LEFT JOIN doctors d ON a.doctor_id = d.id
+    LEFT JOIN hospitals h ON d.hospital_id = h.hospital_id
+    WHERE a.id = ?
+  `;
+  const result = await query(sql, [appointmentId]);
+  return result[0];
+};

@@ -11,7 +11,10 @@ import {
   updateSpecialty,
   deleteSpecialty,
   updateHospital,
+  updateAppointmentStatus,
+  getUserEmailByAppointmentId
 } from "../controller/dataController.js";
+import { sendEmail, getAppointmentConfirmedTemplate } from "../utils/mailHelper.js";
 
 const dataRouter = Router();
 
@@ -310,6 +313,49 @@ dataRouter.get("/getAppointments", async (req, res) => {
     return res.status(200).json({ message: "Success", appointments: result });
   } catch (error) {
     console.error("DATABASE ERROR:", error);
+    return res.status(500).json({ message: "Internal Server Error", error: error.message });
+  }
+});
+
+/**
+ * [API สำหรับอัปเดตสถานะนัดหมายและส่งอีเมลแจ้งเตือน]
+ */
+dataRouter.put("/appointments/:id/status", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, confirmedDate, confirmedTime, note } = req.body;
+
+    console.log(`[Data Router] กำลังอัปเดตนัดหมาย ID: ${id} สู่สถานะ: ${status}`);
+
+    // 1. อัปเดตสถานะในฐานข้อมูล
+    await updateAppointmentStatus(id, status, { confirmedDate, confirmedTime, note });
+
+    // 2. ถ้าสถานะเป็น 'CONFIRMED' ให้ส่งเมลหาคนไข้
+    if (status === 'CONFIRMED' || status === 'confirmed') {
+      const info = await getUserEmailByAppointmentId(id);
+      if (info && info.email) {
+        // ใช้ข้อมูลจาก DB หรือจาก Request ถ้าใน DB ไม่มี
+        const dateStr = confirmedDate || info.appointment_date;
+        const timeStr = confirmedTime || info.appointment_time;
+        
+        const subject = "ยินดีด้วย! การนัดหมายของคุณได้รับการยืนยันแล้ว (HealthQ)";
+        const htmlContent = getAppointmentConfirmedTemplate(
+          info.name || "คนไข้", 
+          dateStr, 
+          timeStr, 
+          info.hospital_name || "โรงพยาบาล"
+        );
+
+        // ส่งเมล (Background)
+        sendEmail(info.email, subject, htmlContent).catch(err => {
+          console.error("[Data Router] ส่งเมลแจ้งยืนยัดนัดหมายไม่สำเร็จ:", err);
+        });
+      }
+    }
+
+    return res.status(200).json({ message: "อัปเดตสถานะนัดหมายสำเร็จ" });
+  } catch (error) {
+    console.error("PUT APPOINTMENT STATUS ERROR:", error);
     return res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 });
