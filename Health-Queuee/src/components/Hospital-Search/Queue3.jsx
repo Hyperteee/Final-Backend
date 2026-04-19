@@ -24,7 +24,7 @@ const Queue3 = () => {
   const navigate = useNavigate();
 
   // --- Data & Context ---
-  const { selectedHospital, selectedDoctor, selectedDepartment } = state || {};
+  const { selectedHospital, selectedDoctor, selectedDepartment, departmentName, doctorName } = state || {};
   const { hospitalSchedules } = useContext(HospitalScheduleContext);
   const hospitalData = hospitalMap[selectedHospital]?.info || null;
 
@@ -141,10 +141,15 @@ const Queue3 = () => {
         ...state,
         priority1Date,
         priority2Date,
+        hospitalName: state.hospitalName || selectedHospital,
         departmentName:
+          state.departmentName ||
+          departmentName ||
           selectedDepartmentData?.name ||
           (selectedDepartment === "ไม่รู้แผนก" ? "คัดกรอง/ทั่วไป" : "ไม่ระบุ"),
         doctorName:
+          state.doctorName ||
+          doctorName ||
           DoctorData?.name ||
           (selectedDepartment === "ไม่รู้แผนก"
             ? "เจ้าหน้าที่คัดกรอง"
@@ -191,7 +196,7 @@ const Queue3 = () => {
             >
               {selectedDepartment === "ไม่รู้แผนก"
                 ? "คัดกรอง"
-                : `แผนก ${selectedDepartmentData?.name || selectedDepartment}`}
+                : `แผนก ${departmentName || selectedDepartmentData?.name || selectedDepartment}`}
             </div>
           </div>
 
@@ -268,7 +273,7 @@ const Queue3 = () => {
 
               <h4 className="fw-bold text-dark mb-1">
                 {selectedDoctor
-                  ? DoctorData?.name
+                  ? doctorName || DoctorData?.name
                   : selectedDepartment === "ไม่รู้แผนก"
                   ? "เจ้าหน้าที่คัดกรอง"
                   : "แพทย์เวรประจำวัน"}
@@ -277,7 +282,7 @@ const Queue3 = () => {
               <p className="text-muted small mb-3">
                 {selectedDepartment === "ไม่รู้แผนก"
                   ? "โรงพยาบาลจะทำการคัดกรองให้"
-                  : `แผนก: ${selectedDepartmentData?.name || "ไม่ระบุ"}`}
+                  : `แผนก: ${departmentName || selectedDepartmentData?.name || "ไม่ระบุ"}`}
               </p>
 
               <div className="alert alert-info border-0 bg-info-subtle text-info-emphasis w-100 py-2 small mb-1">

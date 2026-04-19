@@ -3,71 +3,101 @@ import React, { createContext, useState, useEffect } from "react";
 export const UserAppointment = createContext();
 
 export const UserAppointmentProvider = ({ children }) => {
-  const [appointments, setAppointments] = useState([
-    {
-      id: "BK-1701001",
-      userId: "15418597",
-      batchId: null,
-      hospitalId: "BKK001",
-      hospitalName: "จุฬาลงกรณ์",
-      departmentName: "อายุรกรรม",
-      doctorId: "BKK001-D01-DR01",
-      doctorName: "นพ. สมชาย ใจดี",
-      name: "นาย รักษา ดีมาก",
-      symptom: "มีอาการปวดหัวเรื้อรัง บ้านหมุน เป็นมา 2 สัปดาห์",
-      files: [{ name: "history_checkup.pdf", url: "#" }],
-      priority1Date: "2025-12-01",
-      priority2Date: "2025-12-05",
-      status: "NEW",
-      createdAt: "2025-11-20T09:00:00Z"
-    }, 
-    {
-      id: "BK-1701002",
-      userId: "15418797",
-      batchId: null,
-      hospitalId: "BKK001",
-      hospitalName: "จุฬาลงกรณ์",
-      departmentName: "อายุรกรรม",
-      doctorId: "BKK001-D01-DR01",
-      doctorName: "นพ. สมชาย ใจดี",
-      name: "นาง สมหญิง วิ่งเร็ว",
-      symptom: "dasda",
-      files: [{ name: "referral.pdf", url: "#" }],
-      priority1Date: "2025-12-02",
-      priority2Date: "2025-12-05",
-      status: "NEW",
-      createdAt: "2025-11-20T10:00:00Z"
-    }
-    // {
-    //   id: "BK-1701003",
-    //   userId: "47895497",
-    //   batchId: null,
-    //   hospitalId: "BKK002",
-    //   hospitalName: "ศิริราช",
-    //   departmentName: "จักษุ",
-    //   doctorId: null,
-    //   doctorName: "-",
-    //   name: "ด.ช. เก่ง กล้า",
-    //   symptom: "สายตาสั้น มองไม่ชัด",
-    //   files: [],
-    //   priority1Date: "2025-12-10",
-    //   priority2Date: "2025-12-12",
-    //   status: "NEW",
-    //   createdAt: "2025-11-24T14:00:00Z"
-    // }
-  ]);
+  const [appointments, setAppointments] = useState([]);
+  
+  // Load batches from localStorage
+  const [batches, setBatches] = useState(() => {
+    const saved = localStorage.getItem('healthq_batches');
+    return saved ? JSON.parse(saved) : [];
+  });
 
-  const [batches, setBatches] = useState([]);
+  // Load appointment overrides (like batchId and SENT status) from localStorage
+  const [overrides, setOverrides] = useState(() => {
+    const saved = localStorage.getItem('healthq_overrides');
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  // Save changes to localStorage automatically
+  useEffect(() => {
+    localStorage.setItem('healthq_batches', JSON.stringify(batches));
+  }, [batches]);
+
+  useEffect(() => {
+    localStorage.setItem('healthq_overrides', JSON.stringify(overrides));
+  }, [overrides]);
+
   const [nextId, setNextId] = useState(1);
 
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      try {
+        const response = await fetch("http://127.0.0.1:3000/data/getAppointments");
+        if (response.ok) {
+          const dbPayload = await response.json();
+          const dbData = dbPayload.appointments || [];
+          setAppointments(prev => {
+            // Merge DB data with local state, avoiding duplicate IDs
+            const existingIds = prev.map(a => String(a.id));
+            // Merge overrides into new items from DB
+            const newItems = dbData.filter(dbItem => !existingIds.includes(String(dbItem.id))).map(dbItem => {
+              if (overrides[dbItem.id]) {
+                return { ...dbItem, ...overrides[dbItem.id] };
+              }
+              return dbItem;
+            });
+            return [...prev, ...newItems];
+          });
+        }
+      } catch (error) {
+        console.error("Failed to fetch appointments from DB:", error);
+      }
+    };
+
+    fetchAppointments();
+  }, []);
+
+  // Auto-repair stale batches that have "ไม่ระบุโรงพยาบาล"
+  useEffect(() => {
+    const staleBatchesExist = batches.some(b => b.hospitalName === "ไม่ระบุโรงพยาบาล");
+    if (staleBatchesExist && appointments.length > 0) {
+      setBatches(prevBatches => {
+        let changed = false;
+        const newBatches = prevBatches.map(batch => {
+          if (batch.hospitalName === "ไม่ระบุโรงพยาบาล" && batch.itemIds?.length > 0) {
+            const sample = appointments.find(a => 
+              batch.itemIds.includes(a.id) && 
+              a.hospitalName && 
+              a.hospitalName !== "-" && 
+              a.hospitalName !== "ไม่ระบุโรงพยาบาล"
+            );
+            if (sample) {
+              changed = true;
+              return { ...batch, hospitalName: sample.hospitalName };
+            }
+          }
+          return batch;
+        });
+        return changed ? newBatches : prevBatches;
+      });
+    }
+  }, [appointments, batches]);
+
   const addAppointment = (appointment) => {
-    const newAppt = { ...appointment, id: `BK-${Date.now()}` };
-    setAppointments(prev => [...prev, newAppt]);
+    setAppointments(prev => [...prev, appointment]);
   };
 
-  const cancelAppointment = (appointmentId) => {
+  const cancelAppointment = async (appointmentId, note = "") => {
+    try {
+      await fetch(`http://127.0.0.1:3000/data/appointments/${appointmentId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "cancelled", note })
+      });
+    } catch (err) {
+      console.error("Failed to cancel in DB:", err);
+    }
     setAppointments((prev) =>
-      prev.map((appt) => appt.id === appointmentId ? { ...appt, status: "CANCELLED" } : appt)
+      prev.map((appt) => appt.id === appointmentId ? { ...appt, status: "CANCELLED", note } : appt)
     );
   };
   const createBatchExport = (selectedIds) => {
@@ -96,12 +126,13 @@ export const UserAppointmentProvider = ({ children }) => {
     setAppointments((prevAppointments) =>
       prevAppointments.map((appt) => {
         if (selectedIds.includes(appt.id)) {
-          return {
-            ...appt,
+          const updates = {
             status: "SENT",
             batchId: newBatchId,
             updatedAt: exportedDate
           };
+          setOverrides(prev => ({ ...prev, [appt.id]: { ...(prev[appt.id] || {}), ...updates } }));
+          return { ...appt, ...updates };
         }
         return appt;
       })
@@ -140,35 +171,38 @@ export const UserAppointmentProvider = ({ children }) => {
     }));
   };
 
-  /**
-   * [ฟังก์ชันอัปเดตสถานะนัดหมายที่เชื่อมต่อกับ Backend]
-   * เมื่อมีการเรียกใช้ ฟังก์ชันนี้จะส่งข้อมูลไปยัง Server เพื่ออัปเดตฐานข้อมูลและส่งอีเมลแจ้งเตือน
-   */
   const updateAppointmentStatus = async (id, newStatus, extraData = {}) => {
+    // Determine backend status string
+    let backendStatus = newStatus;
+    if (newStatus === 'NEW') backendStatus = 'pending';
+    else if (newStatus === 'CONFIRMED') backendStatus = 'confirmed';
+    else if (newStatus === 'CANCELLED' || newStatus === 'USER_CANCELLED' || newStatus === 'REJECTED') backendStatus = 'cancelled';
+
+    // Prepare payload
+    const payload = {
+        status: backendStatus,
+    };
+    if (extraData.confirmedDate) payload.confirmedDate = extraData.confirmedDate;
+    if (extraData.confirmedTime) payload.confirmedTime = extraData.confirmedTime;
+    if (extraData.note) payload.note = extraData.note;
+
     try {
-      console.log(`[Appointment Context] กำลังอัปเดตสถานะรายการ ${id} เป็น ${newStatus}`);
-      
-      // 1. ส่งข้อมูลไปที่ Backend (API ที่เราสร้างขึ้นใหม่)
-      const response = await fetch(`http://localhost:3000/data/appointments/${id}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          status: newStatus, 
-          confirmedDate: extraData.confirmedDate,
-          confirmedTime: extraData.confirmedTime,
-          note: extraData.note || extraData.rejectReason
-        })
+      const response = await fetch(`http://127.0.0.1:3000/data/appointments/${id}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
         throw new Error("ไม่สามารถอัปเดตสถานะใน Server ได้");
       }
 
-      // 2. อัปเดตข้อมูลใน Local State เพื่อให้ UI เปลี่ยนแปลงทันที
       setAppointments(prevAppointments => {
         const updatedList = prevAppointments.map(appt => {
           if (appt.id === id) {
-            return { ...appt, status: newStatus, ...extraData };
+            const updates = { status: newStatus, ...extraData };
+            setOverrides(prev => ({ ...prev, [id]: { ...(prev[id] || {}), ...updates } }));
+            return { ...appt, ...updates };
           }
           return appt;
         });

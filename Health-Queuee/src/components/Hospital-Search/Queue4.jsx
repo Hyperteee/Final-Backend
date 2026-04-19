@@ -47,7 +47,7 @@ const Queue4 = () => {
         { id: 1, label: "เลือกแผนก" },
         { id: 2, label: "เลือกแพทย์" },
         { id: 3, label: "เลือกวันนัด" },
-        { id: 4, label: "กรอกอาการ" }
+        { id: 4, label: "กรอกอาการ" }   
     ];
     const currentStep = 4; 
     const isStepActive = (stepNumber) => stepNumber <= currentStep;
@@ -64,54 +64,101 @@ const Queue4 = () => {
     };
 
     // --- LOGIC บันทึกข้อมูล ---
-    const handleConfirm = () => {
-        
-        // let bookingCase = "DEPT_ONLY";
-        // if (selectedDepartment === "ไม่รู้แผนก") {
-        //     bookingCase = "SCREENING";
-        // } else if (selectedDoctor) {
-        //     bookingCase = "SPECIFIC_DOC";
-        // }
+    const handleConfirm = async () => {
+        const now = new Date();
 
-        const now = new Date().toISOString();
+        // Prepare POST data using backend schema
+        const d = new Date(priority1Date);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        const appointment_date = `${yyyy}-${mm}-${dd}`;
 
-        const newAppointment = {
-            id: `BK-${Date.now()}`,
-            userId: currentUser.userId, 
-            name: currentUser.name,
-            lastname: currentUser.lastname,
-            phone: currentUser.phone,
-            birthDate: currentUser.birthDate,
-            nationality: currentUser.nationality,
-            identificationNumber: currentUser.identificationNumber,
-            
-            hospitalId: hospitalData?.id || selectedHospital,
-            hospitalName: selectedHospital,
-            departmentId: selectedDepartment,
-            departmentName: departmentName,
-            doctorId: selectedDoctor || null,
-            doctorName: doctorName,
+        // "ให้ตอนแรกใส่เป็นเวลาที่กดแล้วค่อยมา put ใหม่เป็นเวลานัด" => ส่งเวลาปัจจุบันไปก่อน
+        const appointment_time = now.toTimeString().split(' ')[0]; // format HH:MM:SS
 
-            priority1Date: priority1Date,
-            priority2Date: priority2Date,
-            
+        const filePromises = files.map(file => {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve({ name: file.name, size: file.size, type: file.type, data: reader.result });
+                reader.readAsDataURL(file);
+            });
+        });
+        const encodedFiles = await Promise.all(filePromises);
+
+        const userId = currentUser?.userId || currentUser?.id || 1;
+        const postData = {
+            user_id: userId, 
+            doctor_id: selectedDoctor || null,
+            hospital_id: hospitalData?.id || selectedHospital || null,
+            specialty_id: selectedDepartment || null,
+            appointment_date: appointment_date,
+            priority2_date: priority2Date,
+            appointment_time: appointment_time,
             symptom: symptom,
-            files: files.map(file => ({ name: file.name, size: file.size, type: file.type })), // เก็บเฉพาะ metadata ของไฟล์
-
-            status: "NEW", 
-            
-            createdAt: now, 
-            updatedAt: now, 
-            
-            // เตรียมไว้สำหรับผลลัพธ์
-            batchId: null,
-            suggestedDate: null,
-            confirmedDate: null,
-            resultNote: null
+            files: encodedFiles,
+            status: "pending"
         };
-        addAppointment(newAppointment);
-        
-        handleShow();
+
+        try {
+            const response = await fetch("http://127.0.0.1:3000/data/appointments", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(postData)
+            });
+
+            if (!response.ok) {
+                const errBody = await response.text();
+                throw new Error("Failed to create appointment in DB: " + errBody);
+            }
+
+            const data = await response.json();
+            console.log("Appointment Created in DB:", data);
+
+            // เก็บใน Context เดิมไว้เผื่อ component อื่นยังต้องใช้ข้อมูลละเอียด
+            const realId = data?.data?.insertId;
+            if (!realId) throw new Error("Database did not return an insertId");
+
+            const newAppointment = {
+                id: realId,
+                userId: userId, 
+                name: currentUser?.name || currentUser?.first_name || "ผู้ใช้งาน",
+                lastname: currentUser?.lastname || currentUser?.last_name || "",
+                phone: currentUser?.phone,
+                birthDate: currentUser?.birthDate,
+                nationality: currentUser?.nationality,
+                identificationNumber: currentUser?.identificationNumber || currentUser?.idCard,
+                
+                hospitalId: hospitalData?.id || selectedHospital,
+                hospitalName: state.hospitalName || selectedHospital,
+                departmentId: selectedDepartment,
+                departmentName: departmentName,
+                doctorId: selectedDoctor || null,
+                doctorName: doctorName,
+
+                priority1Date: priority1Date,
+                priority2Date: priority2Date,
+                
+                symptom: symptom,
+                files: encodedFiles,
+
+                status: "NEW", 
+                
+                createdAt: now.toISOString(), 
+                updatedAt: now.toISOString(), 
+                
+                batchId: null,
+                suggestedDate: null,
+                confirmedDate: null,
+                resultNote: null
+            };
+            addAppointment(newAppointment);
+            
+            handleShow();
+        } catch (error) {
+            console.error("Error creating appointment:", error);
+            alert("เกิดข้อผิดพลาดในการจองคิว โปรดลองอีกครั้ง");
+        }
     };
 
     const handleFinished = () => {

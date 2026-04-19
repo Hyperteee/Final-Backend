@@ -289,7 +289,16 @@ const SearchableSelect = ({ options, value, onChange, placeholder, icon: Icon, d
         <span
           className="input-group-text bg-white"
           style={{ cursor: "pointer" }}
-          onClick={() => setIsOpen(prev => !prev)}
+          onClick={() => {
+            if (value || searchTerm) {
+              // Clear the selection
+              onChange("");
+              setSearchTerm("");
+              setIsOpen(false);
+            } else {
+              setIsOpen(prev => !prev);
+            }
+          }}
         >
           {value || searchTerm ? <X size={14} className="text-muted" /> : <ChevronDown size={14} className="text-muted" />}
         </span>

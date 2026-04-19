@@ -228,6 +228,8 @@ export default function AdminTracking() {
   const [filterUrgentOnly, setFilterUrgentOnly] = useState(false);
 
   const [selectedTask, setSelectedTask] = useState(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [detailsItem, setDetailsItem] = useState(null);
   const [selectedBatchId, setSelectedBatchId] = useState(null);
   const [selectedItemIds, setSelectedItemIds] = useState([]);
 
@@ -405,7 +407,7 @@ export default function AdminTracking() {
     setShowModal(true);
   }
 
-  function handleSaveUpdate() {
+  async function handleSaveUpdate() {
     const basePayload = {
       confirmedTime: updateForm.status === 'CONFIRMED' ? updateForm.confirmedTime : null,
       rejectReason: updateForm.status === 'REJECTED' ? updateForm.note : null,
@@ -418,11 +420,14 @@ export default function AdminTracking() {
         ...basePayload,
         confirmedDate: updateForm.status === 'CONFIRMED' ? updateForm.confirmedDate : null
       };
+
+      // The context function updateAppointmentStatus now handles the backend DB update.
+
       updateAppointmentStatus(selectedTask.id, updateForm.status, payload);
       setSelectedTask(null);
 
     } else if (selectedItemIds.length > 0) {
-      selectedItemIds.forEach(id => {
+      for (const id of selectedItemIds) {
         const originalItem = appointments.find(a => a.id === id);
         let targetDate = null;
         if (updateForm.status === 'CONFIRMED') {
@@ -432,11 +437,14 @@ export default function AdminTracking() {
             targetDate = originalItem?.priority1Date;
           }
         }
+
+        // The context function updateAppointmentStatus now handles the backend DB update.
+
         updateAppointmentStatus(id, updateForm.status, {
           ...basePayload,
           confirmedDate: targetDate
         });
-      });
+      }
       setSelectedItemIds([]);
     }
     setShowModal(false);
@@ -689,7 +697,7 @@ export default function AdminTracking() {
                   ) : filteredList.map((item) => (
                     <tr key={item.id} className={item.status === 'USER_CANCELLED' ? 'table-danger' : ''}>
                       <td><span className="font-monospace text-muted small">{item.batchId || "-"}</span></td>
-                      <td><div className="fw-bold">{item.name} {item.lastname}</div><div className="small text-muted">{item.userId || "No ID"}</div></td>
+                      <td><div className="fw-bold">{item.name} {item.lastname || ''}</div></td>
                       <td><div>{item.hospitalName}</div><div className="small text-primary">{item.doctorName || "-"}</div></td>
                       <td>
                         <div className="d-flex flex-column">
@@ -740,7 +748,7 @@ export default function AdminTracking() {
                         )}
 
                         {activeTab === 'HISTORY' && (
-                          <button className="btn btn-outline-secondary btn-sm rounded-pill px-3" disabled>ดูรายละเอียด</button>
+                          <button className="btn btn-outline-primary btn-sm rounded-pill px-3" onClick={() => { setDetailsItem(item); setShowDetailsModal(true); }}>ดูรายละเอียด</button>
                         )}
                       </td>
                     </tr>
@@ -1000,6 +1008,80 @@ export default function AdminTracking() {
           </div>
         </div>
       )}
+    {/* --- MODAL: Read Only Details --- */}
+      {showDetailsModal && detailsItem && (
+        <div className="modal-overlay" onClick={() => setShowDetailsModal(false)}>
+          <div className="modal-content-custom animate-slide-up" onClick={e => e.stopPropagation()}>
+            <div className="d-flex justify-content-between align-items-start mb-4 border-bottom pb-3">
+              <div>
+                <h5 className="mb-1 fw-bold">รายละเอียดการจองคิว</h5>
+                <p className="mb-0 text-muted small">คนไข้: {detailsItem.name} {detailsItem.lastname || ''}</p>
+              </div>
+              <button className="btn-close-custom" onClick={() => setShowDetailsModal(false)}><X size={20} /></button>
+            </div>
+
+            <div className="modal-body p-0">
+              <div className="bg-light p-3 rounded mb-3">
+                <div className="row g-3">
+                  <div className="col-12 col-md-6">
+                    <p className="text-muted small mb-1">เลขประจำตัว(ID)</p>
+                    <p className="fw-bold mb-0">{detailsItem.idCard || detailsItem.userId}</p>
+                  </div>
+                  <div className="col-12 col-md-6">
+                    <p className="text-muted small mb-1">สถานะ</p>
+                    <StatusBadge status={detailsItem.status} hasSuggestion={!!detailsItem.suggestedDate} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="row g-3">
+                <div className="col-12 col-md-6">
+                  <div className="p-3 border rounded h-100">
+                    <h6 className="fw-bold fs-6 mb-3 border-bottom pb-2">สถานที่ และ แพทย์</h6>
+                    <div className="mb-2">
+                      <span className="text-muted small d-block">โรงพยาบาล:</span>
+                      <span className="fw-medium">{detailsItem.hospitalName || "-"}</span>
+                    </div>
+                    <div className="mb-2">
+                      <span className="text-muted small d-block">แผนก:</span>
+                      <span className="fw-medium">{detailsItem.departmentName || "-"}</span>
+                    </div>
+                    <div className="mb-2">
+                      <span className="text-muted small d-block">แพทย์ที่เลือก:</span>
+                      <span className="fw-medium">{detailsItem.doctorName || "-"}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="col-12 col-md-6">
+                  <div className="p-3 border rounded h-100">
+                    <h6 className="fw-bold fs-6 mb-3 border-bottom pb-2">วันที่นัดหมาย & อาการ</h6>
+                    <div className="mb-2">
+                      <span className="text-muted small d-block">วันนัด (ทางเลือก 1):</span>
+                      <span className="fw-medium">{detailsItem.priority1Date ? new Date(detailsItem.priority1Date).toLocaleDateString('th-TH') : "-"}</span>
+                    </div>
+                    {detailsItem.priority2Date && (
+                      <div className="mb-2">
+                        <span className="text-muted small d-block">วันนัด (ทางเลือก 2):</span>
+                        <span className="fw-medium">{new Date(detailsItem.priority2Date).toLocaleDateString('th-TH')}</span>
+                      </div>
+                    )}
+                    <div className="mb-0 mt-3">
+                      <span className="text-muted small d-block mb-1">อาการที่ระบุ:</span>
+                      <div className="bg-white border p-2 rounded small" style={{ minHeight: '60px' }}>
+                        {detailsItem.symptom || "-"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+              <button className="btn btn-secondary px-4 rounded-pill shadow-sm" onClick={() => setShowDetailsModal(false)}>ปิด</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-}
+}
