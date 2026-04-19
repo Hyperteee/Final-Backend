@@ -1,12 +1,61 @@
-/* Doctor List Custom Styles (Overriding standard bootstrap utility to add subtle hover) */
+/* Doctor List Custom Styles */
+
+:root {
+  --primary-navy: #001B45;
+  --secondary-blue: #0056b3;
+  --accent-blue: #eef4ff;
+  --text-muted: #6c757d;
+  --card-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05);
+  --card-hover-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.12);
+}
+
+.doctor-page-container {
+  background-color: #f8f9fa;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(0, 27, 69, 0.03) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(0, 86, 179, 0.03) 0px, transparent 50%);
+}
 
 .profile-card-hover {
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  border: 1px solid rgba(0, 0, 0, 0.03) !important;
+  background: white;
 }
 
 .profile-card-hover:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+  transform: translateY(-8px);
+  box-shadow: var(--card-hover-shadow) !important;
+  border-color: rgba(0, 27, 69, 0.1) !important;
+}
+
+.doctor-avatar-wrapper {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  margin-bottom: 1.5rem;
+}
+
+.hospital-badge {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 38px;
+  height: 38px;
+  background: white;
+  border-radius: 50%;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  border: 2px solid #fff;
+  z-index: 2;
+}
+
+.hospital-badge img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .lines-2 {
@@ -15,5 +64,59 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-height: 2.8em;
+}
+
+.doctor-name {
+  color: var(--primary-navy);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.dept-tag {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--secondary-blue);
+  background: var(--accent-blue);
+  padding: 4px 12px;
+  border-radius: 100px;
+  display: inline-block;
+}
+
+.pagination-btn {
+  transition: all 0.2s ease;
+  font-weight: 600;
+}
+
+.pagination-btn:not(:disabled):hover {
+  background-color: var(--primary-navy) !important;
+  color: white !important;
+  transform: scale(1.05);
+}
+
+.filter-card {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+}
+
+.section-title-wrapper {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 3rem;
+}
+
+.section-title-wrapper::after {
+  content: "";
+  position: absolute;
+  bottom: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 4px;
+  background: var(--primary-navy);
+  border-radius: 2px;
 }
 

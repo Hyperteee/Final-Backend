@@ -169,41 +169,42 @@ export default function DoctorList() {
   };
 
   return (
-    <div className="bg-light min-vh-100 py-5">
+    <div className="doctor-page-container min-vh-100 py-5">
       <div className="container">
-        <h1 className="text-center mb-3 fw-semibold text-black">รายชื่อแพทย์</h1>
-        <div className="d-flex justify-content-center mb-5">
-          <div style={{ height: "4px", width: "100px", backgroundColor: "#001B45", borderRadius: "2px" }}></div>
+        <div className="text-center mb-5">
+          <div className="section-title-wrapper">
+            <h1 className="fw-bold text-black mb-0">รายชื่อแพทย์</h1>
+          </div>
         </div>
 
         {/* Filter Card */}
-        <div className="card shadow-sm border-0 rounded-4 mb-4">
+        <div className="card shadow-sm border-0 rounded-4 mb-5 filter-card">
           <div className="card-body p-4">
-            <div className="row g-3">
+            <div className="row g-4">
               <div className="col-md-4 col-12">
-                <label className="form-label fw-medium text-secondary">Department (แผนก)</label>
-                <select className="form-select border-0 bg-light" value={dept} onChange={(e) => setDept(e.target.value)}>
+                <label className="form-label fw-bold text-secondary small text-uppercase">Department (แผนก)</label>
+                <select className="form-select border-0 bg-light rounded-3" value={dept} onChange={(e) => setDept(e.target.value)}>
                   {departmentOptions.map((option) => (
                     <option key={option}>{option}</option>
-                  ))}
+                   ))}
                 </select>
               </div>
               <div className="col-md-4 col-12">
-                <label className="form-label fw-medium text-secondary">Hospital (โรงพยาบาล)</label>
-                <select className="form-select border-0 bg-light" value={hospital} onChange={(e) => setHospital(e.target.value)}>
+                <label className="form-label fw-bold text-secondary small text-uppercase">Hospital (โรงพยาบาล)</label>
+                <select className="form-select border-0 bg-light rounded-3" value={hospital} onChange={(e) => setHospital(e.target.value)}>
                   {hospitalOptions.map((option) => (
                     <option key={option}>{option}</option>
                   ))}
                 </select>
               </div>
               <div className="col-md-4 col-12">
-                <label className="form-label fw-medium text-secondary">Search (ค้นหาชื่อแพทย์)</label>
+                <label className="form-label fw-bold text-secondary small text-uppercase">Search (ค้นหาชื่อแพทย์)</label>
                 <div className="input-group">
-                  <span className="input-group-text bg-light border-0">
+                  <span className="input-group-text bg-light border-0 rounded-start-3">
                     <i className="bi bi-search text-muted" />
                   </span>
                   <input
-                    className="form-control bg-light border-0"
+                    className="form-control bg-light border-0 rounded-end-3"
                     placeholder="Find doctor or specialty..."
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
@@ -215,101 +216,10 @@ export default function DoctorList() {
         </div>
 
         {/* Summary Info */}
-        <div className="d-flex flex-wrap justify-content-between align-items-center mb-3 px-2">
+        <div className="d-flex flex-wrap justify-content-between align-items-center mb-4 px-2">
           <div>
-            <h5 className="mb-0 fw-semibold text-dark">Doctors List</h5>
-            <small className="text-muted">Found {filteredDoctors.length} doctors</small>
-          </div>
-
-          <div className="doctor-results-panel">
-            {pageDoctors.length > 0 ? (
-              <div className="doctor-card-grid">
-                {pageDoctors.map((doctor, idx) => {
-                  const logoSrc = resolveAssetPath(doctor.hospitalLogo);
-                  const rank = startIndex + idx + 1;
-                  const rankClassMap = {
-                    1: "doctor-card__rank doctor-card__rank--gold",
-                    2: "doctor-card__rank doctor-card__rank--silver",
-                    3: "doctor-card__rank doctor-card__rank--bronze",
-                    4: "doctor-card__rank doctor-card__rank--default",
-                  };
-                  const rankClass = rankClassMap[rank];
-                  const avatarPath = getDoctorAvatarPath(doctor);
-                  const avatarSrc = avatarPath ? resolveAssetPath(avatarPath) : "";
-                  const avatarClassName = `doctor-card__avatar${avatarSrc ? " doctor-card__avatar--image" : ""}`;
-                  return (
-                    <div className="doctor-card-grid__item" key={doctor.id}>
-                      <div className="card border-0 shadow-sm rounded-4 position-relative h-100 doctor-card">
-                        {rankClass && <div className={rankClass}>Top {rank}</div>}
-                        {logoSrc && (
-                          <div className="doctor-card__logo">
-                            <img src={logoSrc} alt={doctor.hospital} />
-                          </div>
-                        )}
-                        <div className="card-body text-center pt-4 pb-4 d-flex flex-column align-items-center doctor-card__body">
-                          <div className={avatarClassName}>
-                            {avatarSrc ? (
-                              <img src={avatarSrc} alt={doctor.name || "Doctor avatar"} />
-                            ) : (
-                              <span className="fw-semibold">{getInitials(doctor.name)}</span>
-                            )}
-                          </div>
-                          <p className="fw-semibold doctor-card__name mt-3 mb-1 text-truncate w-100">
-                            {doctor.name || "Unnamed doctor"}
-                          </p>
-                          <p className="small mb-1 doctor-card__subtitle">{doctor.dept}</p>
-                          <p className="small mb-3 doctor-card__hospital">{doctor.hospital}</p>
-                          {doctor.specialization && <p className="small text-secondary mb-3">{doctor.specialization}</p>}
-                          <div className="d-grid gap-2 w-100 mt-auto doctor-card__actions">
-                            <button
-                              onClick={() => {
-                                // find department id from hospitalMap using hospital name + department name
-                                const hospitalEntry = Object.values(hospitalMap).find(h => h.info?.name === doctor.hospital);
-                                const deptObj = hospitalEntry?.info?.departments?.find(d => d.name === doctor.dept);
-                                const deptId = deptObj?.id ?? doctor.dept;
-                                navigate("/queue3", { 
-                                  state: { 
-                                    selectedHospital: doctor.hospital, 
-                                    selectedDepartment: deptId, 
-                                    selectedDoctor: doctor.id,
-                                    doctorName: doctor.name,
-                                    hospitalName: doctor.hospital,
-                                    departmentName: doctor.dept
-                                  } 
-                                });
-                              }}
-                              className="btn btn-primary rounded-pill py-2"
-                            >
-                              Book
-                            </button>
-                            <button className="btn btn-outline-secondary rounded-pill py-2" onClick={() => handleOpenProfile(doctor)}>
-                              View profile
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="text-center py-5 doctor-empty mb-0">No doctors match the current filters.</p>
-            )}
-          </div>
-
-          <div className="doctor-pagination">
-            <div className="doctor-pagination__panel shadow-sm p-3 d-flex gap-3 justify-content-between">
-              <button className="btn btn-outline-secondary flex-fill rounded-pill" onClick={handlePrev} disabled={step === 1}>
-                Previous
-              </button>
-              <button
-                className="btn btn-primary flex-fill rounded-pill"
-                onClick={handleNext}
-                disabled={step === totalSteps || filteredDoctors.length === 0}
-              >
-                Next
-              </button>
-            </div>
+            <h5 className="mb-0 fw-bold text-dark">ทีมแพทย์ผู้เชี่ยวชาญ</h5>
+            <small className="text-muted">พบแพทย์ทั้งหมด {filteredDoctors.length} ท่าน</small>
           </div>
         </div>
 
@@ -319,41 +229,46 @@ export default function DoctorList() {
             {pageDoctors.map((doctor, idx) => {
               const avatarPath = getDoctorAvatarPath(doctor);
               const avatarSrc = avatarPath ? resolveAssetPath(avatarPath) : "";
-              const logoSrc = resolveAssetPath(doctor.hospitalLogo);
+              const hospitalLogoSrc = doctor.hospitalLogo ? resolveAssetPath(doctor.hospitalLogo) : null;
               
               return (
                 <div className="col-lg-3 col-md-4 col-sm-6" key={doctor.id}>
-                  <div className="card shadow-sm border-0 h-100 rounded-4 text-center profile-card-hover transition-all">
+                  <div className="card shadow-sm border-0 h-100 rounded-4 text-center profile-card-hover">
                     <div className="card-body p-4 d-flex flex-column align-items-center">
                       
-                      {/* Avatar */}
-                      <div 
-                        className="rounded-circle overflow-hidden mb-3 shadow-sm" 
-                        style={{ width: "90px", height: "90px", backgroundColor: "#e9ecef" }}
-                      >
-                        {avatarSrc ? (
-                          <img src={avatarSrc} alt={doctor.name || "Doctor"} className="w-100 h-100" style={{ objectFit: "cover" }} />
-                        ) : (
-                          <div className="w-100 h-100 d-flex align-items-center justify-content-center text-secondary fw-bold fs-4">
-                            {getInitials(doctor.name)}
+                      {/* Avatar with Hospital Badge */}
+                      <div className="doctor-avatar-wrapper">
+                        <div 
+                          className="rounded-circle overflow-hidden shadow-sm w-100 h-100 border border-3 border-white bg-light"
+                        >
+                          {avatarSrc ? (
+                            <img src={avatarSrc} alt={doctor.name || "Doctor"} className="w-100 h-100" style={{ objectFit: "cover" }} />
+                          ) : (
+                            <div className="w-100 h-100 d-flex align-items-center justify-content-center text-secondary fw-bold fs-4">
+                              {getInitials(doctor.name)}
+                            </div>
+                          )}
+                        </div>
+                        {hospitalLogoSrc && (
+                          <div className="hospital-badge">
+                            <img src={hospitalLogoSrc} alt={doctor.hospital} title={doctor.hospital} />
                           </div>
                         )}
                       </div>
 
-                      <h5 className="fw-bold text-dark mb-1 text-truncate w-100" title={doctor.name || "Unnamed doctor"}>
+                      <h5 className="doctor-name mb-1 text-truncate w-100" title={doctor.name || "Unnamed doctor"}>
                         {doctor.name || "Unnamed doctor"}
                       </h5>
-                      <p className="text-primary fw-medium small mb-2">{doctor.dept}</p>
-                      
-                      {/* Hospital Tag */}
-                      <div className="bg-light rounded-pill px-3 py-1 mb-2">
-                        <small className="text-muted d-block text-truncate w-100" style={{ maxWidth: "150px" }} title={doctor.hospital}>
-                          <i className="bi bi-building me-1"></i> {doctor.hospital}
-                        </small>
+                      <div className="mb-3">
+                        <span className="dept-tag">{doctor.dept}</span>
                       </div>
+                      
+                      <p className="small text-muted mb-2 text-truncate w-100">
+                        <i className="bi bi-building me-1"></i> {doctor.hospital}
+                      </p>
 
                       {doctor.specialization && (
-                         <small className="text-secondary mb-3 d-block lines-2">{doctor.specialization}</small>
+                         <p className="text-secondary small mb-3 lines-2 px-2">{doctor.specialization}</p>
                       )}
 
                       <div className="mt-auto w-100 d-grid gap-2">
@@ -362,15 +277,24 @@ export default function DoctorList() {
                             const hospitalEntry = Object.values(hospitalMap).find(h => h.info?.name === doctor.hospital);
                             const deptObj = hospitalEntry?.info?.departments?.find(d => d.name === doctor.dept);
                             const deptId = deptObj?.id ?? doctor.dept;
-                            navigate("/queue3", { state: { selectedHospital: doctor.hospital, selectedDepartment: deptId, selectedDoctor: doctor.id } });
+                            navigate("/queue3", { 
+                              state: { 
+                                selectedHospital: doctor.hospital, 
+                                selectedDepartment: deptId, 
+                                selectedDoctor: doctor.id,
+                                doctorName: doctor.name,
+                                hospitalName: doctor.hospital,
+                                departmentName: doctor.dept
+                              } 
+                            });
                           }}
-                          className="btn btn-primary rounded-pill btn-sm border-0 py-2 fw-medium shadow-none"
+                          className="btn btn-primary rounded-pill btn-sm border-0 py-2 fw-bold shadow-none"
                           style={{ backgroundColor: "#001B45" }}
                         >
                           ทำการนัดหมาย
                         </button>
                         <button 
-                          className="btn btn-outline-secondary rounded-pill btn-sm py-2 fw-medium shadow-none"
+                          className="btn btn-outline-light text-dark border rounded-pill btn-sm py-2 fw-bold shadow-none"
                           onClick={() => handleOpenProfile(doctor)}
                         >
                           ดูประวัติ
@@ -383,7 +307,7 @@ export default function DoctorList() {
             })}
           </div>
         ) : (
-          <div className="text-center py-5 my-5 bg-white rounded-4 shadow-sm border-0">
+          <div className="text-center py-5 my-5 bg-white rounded-4 shadow-sm border-0 filter-card">
             <i className="bi bi-search text-muted opacity-50 mb-3" style={{ fontSize: "3rem" }}></i>
             <h5 className="text-muted fw-normal">ไม่พบรายชื่อแพทย์ที่ตรงตามเงื่อนไข</h5>
           </div>
@@ -392,15 +316,15 @@ export default function DoctorList() {
         {/* Pagination */}
         <div className="d-flex justify-content-center align-items-center gap-3">
           <button 
-            className="btn btn-outline-secondary rounded-pill px-4 fw-medium bg-white" 
+            className="btn btn-outline-secondary rounded-pill px-4 pagination-btn bg-white" 
             onClick={handlePrev} 
             disabled={step === 1}
           >
             ก่อนหน้า
           </button>
-          <span className="text-muted small fw-medium">หน้าที่ {step} จาก {totalSteps}</span>
+          <span className="text-muted small fw-bold">หน้าที่ {step} จาก {totalSteps}</span>
           <button
-            className="btn btn-primary rounded-pill px-4 fw-medium border-0"
+            className="btn btn-primary rounded-pill px-4 pagination-btn border-0"
             style={{ backgroundColor: "#001B45" }}
             onClick={handleNext}
             disabled={step === totalSteps || filteredDoctors.length === 0}
