@@ -4,10 +4,34 @@ import { sendEmail } from "../utils/mailHelper.js";
 const mailRouter = express.Router();
 
 /**
- * [API สำหรับทดสอบส่งอีเมลทั่วไป]
- * เรียกใช้ฟังก์ชัน sendEmail จาก mailHelper เพื่อลดความซ้ำซ้อนของโค้ด
+ * @swagger
+ * /mail/send-email:
+ *   post:
+ *     summary: API สำหรับทดสอบส่งอีเมลทั่วไป
+ *     description: เรียกใช้ฟังก์ชัน sendEmail จาก mailHelper เพื่อส่งอีเมลพื้นฐาน โดยรับค่าผู้รับ หัวข้อ และเนื้อหา
+ *     tags: [Mail]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - to
+ *             properties:
+ *               to: { type: string, format: email, description: "อีเมลผู้รับ" }
+ *               subject: { type: string, description: "หัวข้ออีเมล" }
+ *               text: { type: string, description: "เนื้อหาข้อความ (จะถูกครอบด้วย <p>)" }
+ *     responses:
+ *       200:
+ *         description: ส่งอีเมลทดสอบสำเร็จ
+ *       400:
+ *         description: ข้อมูลไม่ครบถ้วน
+ *       500:
+ *         description: เกิดข้อผิดพลาดในระบบ
  */
 mailRouter.post("/send-email", async (req, res) => { 
+    // รับข้อมูลจาก Body และส่งเมลโดยใช้ mailHelper
     console.log("[Mail Router] ได้รับข้อมูลการส่งเมลทดสอบ:", req.body);
     
     if (!req.body || !req.body.to) {
@@ -15,8 +39,8 @@ mailRouter.post("/send-email", async (req, res) => {
     }
 
     try {
-        // เรียกใช้ฟังก์ชันกลางที่เตรียมไว้
-        await sendEmail(req.body.to, req.body.subject, `<p>${req.body.text}</p>`);
+        // เรียกใช้ฟังก์ชันกลางที่เตรียมไว้ โดยใส่ tag <p> ครอบเนื้อหา text
+        await sendEmail(req.body.to, req.body.subject || "No Subject", `<p>${req.body.text || ""}</p>`);
         res.status(200).json({ message: "ส่งอีเมลทดสอบสำเร็จ" });
     } catch (error) {
         res.status(500).json({ message: "เกิดข้อผิดพลาดในการส่งอีเมล", error: error.message });
@@ -30,8 +54,29 @@ function generateOtp() {
 }
 
 /**
- * [API สำหรับส่งรหัส OTP]
- * ปรับปรุงให้ใช้ mailHelper เพื่อความสะอาดของโค้ด
+ * @swagger
+ * /mail/send-otp-email:
+ *   post:
+ *     summary: API สำหรับส่งรหัส OTP ไปยังอีเมล
+ *     description: สร้างรหัส OTP 6 หลัก และส่งไปยังอีเมลที่ระบุ พร้อมเก็บสถานะไว้ใน RAM ชั่วคราว (5 นาที)
+ *     tags: [Mail]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email: { type: string, format: email, description: "อีเมลที่ต้องการรับ OTP" }
+ *     responses:
+ *       200:
+ *         description: ส่งรหัส OTP เรียบร้อยแล้ว
+ *       400:
+ *         description: อีเมลไม่ถูกต้อง
+ *       500:
+ *         description: ไม่สามารถส่ง OTP ได้
  */
 mailRouter.post("/send-otp-email", async (req, res) => {
   try {
@@ -41,14 +86,16 @@ mailRouter.post("/send-otp-email", async (req, res) => {
       return res.status(400).json({ message: "กรุณาระบุอีเมล" });
     }
 
+    // 1. สุ่มรหัส OTP 6 หลัก
     const otp = generateOtp();
 
-    // เก็บ OTP ไว้ตรวจสอบ (หมดอายุใน 5 นาที)
+    // 2. เก็บ OTP ไว้ตรวจสอบ (หมดอายุใน 5 นาที)
     otpStore[email] = {
       otp,
       expiresAt: Date.now() + 5 * 60 * 1000,
     };
 
+    // 3. เตรียม Template เนื้อหาอีเมล
     const htmlContent = `
         <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; border: 1px solid #EEE; border-radius: 10px;">
             <div style="text-align: center; padding-bottom: 20px;">
@@ -65,6 +112,7 @@ mailRouter.post("/send-otp-email", async (req, res) => {
         </div>
     `;
 
+    // 4. ส่งเมลผ่าน Helper
     await sendEmail(email, "Your OTP Code for HFU", htmlContent);
 
     return res.json({ message: "ส่งรหัส OTP เรียบร้อยแล้ว" });

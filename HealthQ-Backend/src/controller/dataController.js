@@ -34,7 +34,7 @@ export const getDoctorsData = async () => {
 };
 
 // เพิ่มแพทย์ใหม่
-export const addDoctor = async (data) => {
+export const createDoctor = async (data) => {
   const { hospital_id, specialty_id, specialization, prefix, first_name, last_name } = data;
   const sql = "INSERT INTO doctors (hospital_id, specialty_id, specialization, prefix, first_name, last_name) VALUES (?, ?, ?, ?, ?, ?)";
   const params = [hospital_id || null, specialty_id, specialization || null, prefix || null, first_name, last_name];
@@ -73,7 +73,7 @@ export const getSpecialtiesData = async () => {
 };
 
 // เพิ่มแผนกใหม่
-export const addSpecialty = async (data) => {
+export const createSpecialty = async (data) => {
   const { name } = data;
   const sql = "INSERT INTO specialties (name) VALUES (?)";
   const result = await query(sql, [name]);
@@ -95,12 +95,26 @@ export const deleteSpecialty = async (id) => {
   return result;
 };
 
-// อัปเดตข้อมูลโรงพยาบาล
-export const updateHospital = async (id, data) => {
-  const { hospital_id, name, type, state, district } = data;
-  const sql = "UPDATE hospitals SET hospital_id = ?, name = ?, type = ?, state = ?, district = ? WHERE id = ?";
-  const params = [hospital_id, name, type || null, state, district, id];
+// เพิ่มข้อมูลโรงพยาบาล
+export const createHospital = async (data) => {
+  const sql = "INSERT INTO hospitals (hospital_id, name, type, state, district) VALUES (?, ?, ?, ?, ?)";
+  const params = [data.hospital_id, data.name, data.type, data.state, data.district];
   const result = await query(sql, params);
+  return result;
+};
+
+// แก้ไขข้อมูลโรงพยาบาล
+export const updateHospital = async (id, data) => {
+  const sql = "UPDATE hospitals SET hospital_id = ?, name = ?, type = ?, state = ?, district = ? WHERE id = ?";
+  const params = [data.hospital_id, data.name, data.type || null, data.state, data.district, id];
+  const result = await query(sql, params);
+  return result;
+};
+
+// ลบข้อมูลโรงพยาบาล
+export const deleteHospital = async (id) => {
+  const sql = "DELETE FROM hospitals WHERE id = ?";
+  const result = await query(sql, [id]);
   return result;
 };
 
@@ -253,52 +267,6 @@ export const updateAppointment = async (id, data) => {
     }
     throw err;
   }
-};
-
-// เพิ่มข้อมูลโรงพยาบาล
-export const createHospital = async (data) => {
-  const sql = "INSERT INTO hospitals (hospital_id, name, type, state, district) VALUES (?, ?, ?, ?, ?)";
-  const params = [data.hospital_id, data.name, data.type, data.state, data.district];
-  const result = await query(sql, params);
-  return result;
-};
-
-// แก้ไขข้อมูลโรงพยาบาล
-export const updateHospital = async (id, data) => {
-  const sql = "UPDATE hospitals SET hospital_id = ?, name = ?, type = ?, state = ?, district = ? WHERE id = ?";
-  const params = [data.hospital_id, data.name, data.type, data.state, data.district, id];
-  const result = await query(sql, params);
-  return result;
-};
-
-// ลบข้อมูลโรงพยาบาล
-export const deleteHospital = async (id) => {
-  const sql = "DELETE FROM hospitals WHERE id = ?";
-  const result = await query(sql, [id]);
-  return result;
-};
-
-// เพิ่มข้อมูลแพทย์
-export const createDoctor = async (data) => {
-  const sql = "INSERT INTO doctors (hospital_id, specialty_id, specialization, prefix, first_name, last_name) VALUES (?, ?, ?, ?, ?, ?)";
-  const params = [data.hospital_id, data.specialty_id, data.specialization, data.prefix, data.first_name, data.last_name];
-  const result = await query(sql, params);
-  return result;
-};
-
-// แก้ไขข้อมูลแพทย์
-export const updateDoctor = async (id, data) => {
-  const sql = "UPDATE doctors SET hospital_id = ?, specialty_id = ?, specialization = ?, prefix = ?, first_name = ?, last_name = ? WHERE id = ?";
-  const params = [data.hospital_id, data.specialty_id, data.specialization, data.prefix, data.first_name, data.last_name, id];
-  const result = await query(sql, params);
-  return result;
-};
-
-// ลบข้อมูลแพทย์
-export const deleteDoctor = async (id) => {
-  const sql = "DELETE FROM doctors WHERE id = ?";
-  const result = await query(sql, [id]);
-  return result;
 };
 
 /**

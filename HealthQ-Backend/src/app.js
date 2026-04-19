@@ -20,11 +20,25 @@ async function checkAndAlter() {
   try {
     const connection = await mysql.createConnection(config);
     console.log("Checking DB schema for missing columns...");
+    // Appointments Table
     await connection.query("ALTER TABLE appointments ADD COLUMN files LONGTEXT;").catch(e => {});
     await connection.query("ALTER TABLE appointments MODIFY COLUMN files LONGTEXT;").catch(e => {});
     await connection.query("ALTER TABLE appointments ADD COLUMN note TEXT;").catch(e => {});
     await connection.query("ALTER TABLE appointments ADD COLUMN specialty_id INT UNSIGNED;").catch(e => {});
     await connection.query("ALTER TABLE appointments ADD COLUMN hospital_id VARCHAR(50);").catch(e => {});
+    
+    // Users Table
+    await connection.query("ALTER TABLE users ADD COLUMN title VARCHAR(50);").catch(e => {});
+    await connection.query("ALTER TABLE users ADD COLUMN name VARCHAR(100);").catch(e => {});
+    await connection.query("ALTER TABLE users ADD COLUMN lastname VARCHAR(100);").catch(e => {});
+    await connection.query("ALTER TABLE users ADD COLUMN gender VARCHAR(20);").catch(e => {});
+    await connection.query("ALTER TABLE users ADD COLUMN identification_number VARCHAR(13);").catch(e => {});
+    await connection.query("ALTER TABLE users ADD COLUMN phone VARCHAR(20);").catch(e => {});
+    await connection.query("ALTER TABLE users ADD COLUMN birth_date DATE;").catch(e => {});
+    await connection.query("ALTER TABLE users ADD COLUMN nationality VARCHAR(100);").catch(e => {});
+    await connection.query("ALTER TABLE users ADD COLUMN email VARCHAR(100);").catch(e => {});
+    await connection.query("ALTER TABLE users ADD COLUMN status VARCHAR(50) DEFAULT 'pending';").catch(e => {});
+    
     await connection.end();
     console.log("DB schema is verified.");
   } catch (err) {

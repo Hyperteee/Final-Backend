@@ -64,26 +64,25 @@ userRouter.post("/register", async (req, res) => {
     
     // กำหนด username ให้เป็น email หากไม่ได้ส่งมาแยกต่างหาก
     const username = req.body.username || email;
-    const role_id = req.body.role_id || 3; // กำหนดค่าแบบ defualt ผู้ใช้ทั่วไป
+    const role_id = req.body.role_id || 3; // กำหนดค่าแบบ default ผู้ใช้ทั่วไป
 
+    // 1. ตรวจสอบข้อมูลเบื้องต้น
     if (!email || !password || !identificationNumber || !name) {
       return res.status(400).json({ message: "ข้อมูลไม่ครบถ้วน กรุณากรอกข้อมูลที่จำเป็นให้ครบ" });
     }
 
+    // 2. ตรวจสอบว่ามีผู้ใช้เดิมอยู่แล้วหรือไม่
     const oldUser = await getUserByUsername(username);
     if (oldUser) {
       return res.status(400).json({ message: "Username หรืออีเมลนี้ถูกใช้งานแล้ว" });
     }
 
-    // const encryptedPassword = await bcrypt.hash(password, 10);
-
+    // 3. สร้าง User ใหม่ในฐานข้อมูล
     const user = await createUser({ 
       title, name, lastname, gender, identificationNumber, phone, birthDate, nationality, email, username, password, role_id 
     });
 
-    // ตรวจสอบว่าถ้าต้องรอการอนุมัติ (status pending) จะไม่ออก Token ให้ทันที
-    // หมายเหตุ: createUser ควรคืนค่า status มาด้วย หรือเราเช็คเงื่อนไขตาม role_id
-    // ในที่นี้สมมติว่าถ้าเป็นผู้ใช้ทั่วไป (role_id 3) จะต้องรออนุมัติ
+    // 4. กรณีเป็นผู้ใช้ทั่วไป (role_id 3) จะต้องรอการอนุมัติ (Status: pending)
     if (role_id === 3) {
       return res.status(201).json({
         message: "ลงทะเบียนสำเร็จ กรุณารอผู้ดูแลระบบอนุมัติการใช้งาน",
@@ -91,6 +90,7 @@ userRouter.post("/register", async (req, res) => {
       });
     }
 
+    // 5. กรณี Admin/SuperAdmin สร้างเอง ให้ออก Token ทันที
     const token = jwt.sign(
       { userId: user.id, role: user.role_id, email: user.email },
       process.env.JWT_SECRET || 'your_secret_key',
@@ -155,21 +155,24 @@ userRouter.post("/login", async (req, res) => {
 
     const loginIdentifier = username || email;
     
+    // 1. ตรวจสอบข้อมูล Input
     if (!loginIdentifier) {
       return res.status(400).json({ message: "กรุณากรอกชื่อผู้ใช้หรืออีเมล" });
     }
 
+    // 2. ดึงข้อมูล User จาก DB
     const user = await getUserByUsername(loginIdentifier);
     if (!user) {
       return res.status(404).json({ message: "ไม่พบผู้ใช้งาน" });
     }
 
+    // 3. ตรวจสอบรหัสผ่าน (Hash check)
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: "รหัสผ่านไม่ถูกต้อง" });
     }
 
-    // ตรวจสอบสถานะการอนุมัติ (ถ้าเป็น pending จะไม่ให้เข้าสู่ระบบ)
+    // 4. ตรวจสอบสถานะการอนุมัติ
     if (user.status === 'pending') {
       return res.status(403).json({ 
         message: "บัญชีของคุณอยู่ระหว่างรอการอนุมัติจากผู้ดูแลระบบ",
@@ -177,6 +180,7 @@ userRouter.post("/login", async (req, res) => {
       });
     }
 
+    // 5. สร้าง JWT Token (หมดอายุใน 2 ชม.)
     const token = jwt.sign(
       { userId: user.id, role: user.role_id, email: user.email },
       process.env.JWT_SECRET || 'your_secret_key',
@@ -192,7 +196,6 @@ userRouter.post("/login", async (req, res) => {
         email: user.email,
         role_id: user.role_id,
         name: user.name,
-        // lastname: user.lastname
       }
     });
 
@@ -235,8 +238,10 @@ userRouter.post("/login", async (req, res) => {
 // --- Get All Users Route ---
 userRouter.get("/all", async (req, res) => {
   try {
+    // 1. ดึงข้อมูล User ทั้งหมด
     const users = await getAllUsers();
-    // แปลง role_id (1=super_admin, 2=admin, 3=user,)
+
+    // 2. แปลง role_id เป็นข้อความ (Format เพื่อแสดงในตาราง Admin)
     const formattedUsers = users.map(user => {
       let roleText = 'user';
       if (user.status === 'pending') {
@@ -385,10 +390,10 @@ userRouter.delete("/:id", async (req, res) => {
  *         description: Server error
  */
 // --- Get User Profile Route ---
-// เพิ่ม route สำหรับดึงข้อมูลโปรไฟล์
 userRouter.get("/profile/:id", async (req, res) => {
   try {
     const userId = req.params.id;
+    // ดึงข้อมูล User ตาม ID (รวมข้อมูลส่วนตัวฉบับเต็ม)
     const user = await getUserById(userId);
     if (!user) {
       return res.status(404).json({ message: "ไม่พบผู้ใช้งาน" });
