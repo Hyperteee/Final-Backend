@@ -34,6 +34,10 @@ CREATE TABLE `appointments` (
   `appointment_date` date NOT NULL COMMENT 'วันที่นัดหมาย',
   `appointment_time` time NOT NULL COMMENT 'เวลานัดหมาย',
   `symptom` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'อาการป่วยเบื้องต้น',
+  `files` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'ไฟล์หรือรูปภาพประกอบ (Base64 or Filenames)',
+  `note` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'หมายเหตุเพิ่มเติม (เหตุผลการยกเลิก/เลื่อน)',
+  `specialty_id` int UNSIGNED DEFAULT NULL COMMENT 'รหัสแผนก',
+  `hospital_id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'รหัสโรงพยาบาล',
   `status` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending' COMMENT 'สถานะคิว (เช่น pending, confirmed, cancelled)'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

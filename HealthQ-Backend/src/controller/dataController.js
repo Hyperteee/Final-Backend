@@ -49,9 +49,12 @@ export const getAppointmentsData = async () => {
       a.doctor_id as doctorId,
       a.appointment_date as priority1Date,
       a.priority2_date as priority2Date,
-      a.appointment_time,
       a.symptom,
+      a.note,
+      a.files,
       a.status,
+      a.hospital_id as apptHospitalId,
+      a.specialty_id as apptSpecialtyId,
       u.name,
       u.lastname,
       u.birth_date as birthDate,
@@ -74,7 +77,7 @@ export const getAppointmentsData = async () => {
     id: row.id, 
     userId: row.userId,
     batchId: null,
-    hospitalId: row.hospitalId,
+    hospitalId: row.apptHospitalId || row.hospitalId,
     hospitalName: row.hospitalName,
     departmentName: row.departmentName,
     doctorId: row.doctorId,
@@ -85,7 +88,8 @@ export const getAppointmentsData = async () => {
     birthDate: row.birthDate,
     idCard: row.idCard,
     symptom: row.symptom || "-",
-    files: [],
+    note: row.note || "",
+    files: row.files ? JSON.parse(row.files) : [],
     priority1Date: row.priority1Date,
     priority2Date: row.priority2Date,
     status: row.status === 'pending' ? 'NEW' : 
@@ -115,18 +119,29 @@ export const createAppointment = async (data) => {
     if (dateMatch2) date2Str = dateMatch2[1];
   }
 
-  const sql = "INSERT INTO appointments (user_id, doctor_id, appointment_date, priority2_date, appointment_time, symptom, status) VALUES (?, ?, ?, ?, ?, ?, ?)";
+  const sql = "INSERT INTO appointments (user_id, doctor_id, hospital_id, specialty_id, appointment_date, priority2_date, appointment_time, symptom, note, files, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
   const params = [
     data.user_id,
     data.doctor_id || null,
+    data.hospital_id || null,
+    data.specialty_id || null,
     dateStr,
     date2Str || null,
     timeStr,
     data.symptom,
+    data.note || null,
+    data.files ? JSON.stringify(data.files) : null,
     data.status || "pending"
   ];
-  const result = await query(sql, params);
-  return result;
+  try {
+    const result = await query(sql, params);
+    return result;
+  } catch (err) {
+    if (err.code === 'ER_BAD_FIELD_ERROR') {
+         console.error("Database schema outdated! Please run the alter_db.js script.");
+    }
+    throw err;
+  }
 };
 
 // อัปเดตข้อมูลการจอง (Update Appointment)
@@ -146,7 +161,6 @@ export const updateAppointment = async (id, data) => {
     if (dateMatch) dateStr = dateMatch[1];
   }
 
-  // If date or time is not provided, update only status
   let sql = "UPDATE appointments SET status = ?";
   let params = [data.status];
 
@@ -158,12 +172,23 @@ export const updateAppointment = async (id, data) => {
       sql += ", appointment_time = ?";
       params.push(timeStr);
   }
+  if (data.note !== undefined) {
+      sql += ", note = ?";
+      params.push(data.note);
+  }
 
   sql += " WHERE id = ?";
   params.push(id);
 
-  const result = await query(sql, params);
-  return result;
+  try {
+    const result = await query(sql, params);
+    return result;
+  } catch (err) {
+    if (err.code === 'ER_BAD_FIELD_ERROR') {
+         console.error("Database schema outdated! Please run the alter_db.js script.");
+    }
+    throw err;
+  }
 };
 
 // เพิ่มข้อมูลโรงพยาบาล

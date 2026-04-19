@@ -421,31 +421,7 @@ export default function AdminTracking() {
         confirmedDate: updateForm.status === 'CONFIRMED' ? updateForm.confirmedDate : null
       };
 
-      // Map frontend status to DB status
-      let dbStatus = "pending";
-      if (updateForm.status === "CONFIRMED") dbStatus = "confirmed";
-      else if (updateForm.status === "REJECTED" || updateForm.status === "CANCELLED") dbStatus = "cancelled";
-      
-      try {
-        const res = await fetch(`http://localhost:3000/data/appointments/${selectedTask.id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                status: dbStatus,
-                appointment_date: payload.confirmedDate,
-                appointment_time: payload.confirmedTime
-            })
-        });
-        if (!res.ok) {
-            const errBody = await res.text();
-            alert("อัปเดตไม่สำเร็จ (เซิร์ฟเวอร์): " + errBody);
-        } else {
-            console.log("บันทึก Database สำเร็จ", await res.json());
-        }
-      } catch (err) {
-        console.error("PUT Failed:", err);
-        alert("เชื่อมต่อ Database ล้มเหลว: " + err.message);
-      }
+      // The context function updateAppointmentStatus now handles the backend DB update.
 
       updateAppointmentStatus(selectedTask.id, updateForm.status, payload);
       setSelectedTask(null);
@@ -462,28 +438,7 @@ export default function AdminTracking() {
           }
         }
 
-        let dbStatusBulk = "pending";
-        if (updateForm.status === "CONFIRMED") dbStatusBulk = "confirmed";
-        else if (updateForm.status === "REJECTED" || updateForm.status === "CANCELLED") dbStatusBulk = "cancelled";
-        
-        try {
-          const resBulk = await fetch(`http://localhost:3000/data/appointments/${id}`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                  status: dbStatusBulk,
-                  appointment_date: targetDate,
-                  appointment_time: basePayload.confirmedTime
-              })
-          });
-          if (!resBulk.ok) {
-              const errBodyBulk = await resBulk.text();
-              alert("อัปเดตแบบกลุ่มไม่สำเร็จ (เซิร์ฟเวอร์): " + errBodyBulk);
-          }
-        } catch (err) {
-          console.error("PUT Bulk Failed:", err);
-          alert("เชื่อมต่อ Database แบบกลุ่มล้มเหลว: " + err.message);
-        }
+        // The context function updateAppointmentStatus now handles the backend DB update.
 
         updateAppointmentStatus(id, updateForm.status, {
           ...basePayload,

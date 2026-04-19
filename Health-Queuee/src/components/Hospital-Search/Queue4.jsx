@@ -77,14 +77,26 @@ const Queue4 = () => {
         // "ให้ตอนแรกใส่เป็นเวลาที่กดแล้วค่อยมา put ใหม่เป็นเวลานัด" => ส่งเวลาปัจจุบันไปก่อน
         const appointment_time = now.toTimeString().split(' ')[0]; // format HH:MM:SS
 
+        const filePromises = files.map(file => {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve({ name: file.name, size: file.size, type: file.type, data: reader.result });
+                reader.readAsDataURL(file);
+            });
+        });
+        const encodedFiles = await Promise.all(filePromises);
+
         const userId = currentUser?.userId || currentUser?.id || 1;
         const postData = {
             user_id: userId, 
             doctor_id: selectedDoctor || null,
+            hospital_id: hospitalData?.id || selectedHospital || null,
+            specialty_id: selectedDepartment || null,
             appointment_date: appointment_date,
             priority2_date: priority2Date,
             appointment_time: appointment_time,
             symptom: symptom,
+            files: encodedFiles,
             status: "pending"
         };
 
@@ -128,7 +140,7 @@ const Queue4 = () => {
                 priority2Date: priority2Date,
                 
                 symptom: symptom,
-                files: files.map(file => ({ name: file.name, size: file.size, type: file.type })),
+                files: encodedFiles,
 
                 status: "NEW", 
                 

@@ -86,9 +86,18 @@ export const UserAppointmentProvider = ({ children }) => {
     setAppointments(prev => [...prev, appointment]);
   };
 
-  const cancelAppointment = (appointmentId) => {
+  const cancelAppointment = async (appointmentId, note = "") => {
+    try {
+      await fetch(`http://127.0.0.1:3000/data/appointments/${appointmentId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "cancelled", note })
+      });
+    } catch (err) {
+      console.error("Failed to cancel in DB:", err);
+    }
     setAppointments((prev) =>
-      prev.map((appt) => appt.id === appointmentId ? { ...appt, status: "CANCELLED" } : appt)
+      prev.map((appt) => appt.id === appointmentId ? { ...appt, status: "CANCELLED", note } : appt)
     );
   };
   const createBatchExport = (selectedIds) => {
@@ -162,7 +171,31 @@ export const UserAppointmentProvider = ({ children }) => {
     }));
   };
 
-  const updateAppointmentStatus = (id, newStatus, extraData = {}) => {
+  const updateAppointmentStatus = async (id, newStatus, extraData = {}) => {
+    // Determine backend status string
+    let backendStatus = newStatus;
+    if (newStatus === 'NEW') backendStatus = 'pending';
+    else if (newStatus === 'CONFIRMED') backendStatus = 'confirmed';
+    else if (newStatus === 'CANCELLED' || newStatus === 'USER_CANCELLED' || newStatus === 'REJECTED') backendStatus = 'cancelled';
+
+    // Prepare payload
+    const payload = {
+        status: backendStatus,
+    };
+    if (extraData.confirmedDate) payload.appointment_date = extraData.confirmedDate;
+    if (extraData.confirmedTime) payload.appointment_time = extraData.confirmedTime;
+    if (extraData.note) payload.note = extraData.note;
+
+    try {
+      await fetch(`http://127.0.0.1:3000/data/appointments/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+    } catch (err) {
+      console.error("Failed to update status in DB:", err);
+    }
+
     setAppointments(prevAppointments => {
       const updatedList = prevAppointments.map(appt => {
         if (appt.id === id) {

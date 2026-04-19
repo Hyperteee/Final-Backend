@@ -17,6 +17,7 @@ export default function ProfileBook() {
   const [showPostponeModal, setShowPostponeModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
 
   ///////////////////// หาว่าใครคือคนใช้ตอนนี้
   useEffect(() => {
@@ -74,30 +75,30 @@ function handleLogout(){
   // --- Handlers ---
   const handleCancelClick = (appt) => {
     setSelectedAppointment(appt);
+    setCancelReason("");
     setShowCancelModal(true);
   };
 
   const confirmCancel = () => {
     if (selectedAppointment) {
-      cancelAppointment(selectedAppointment.id);
+      cancelAppointment(selectedAppointment.id, cancelReason);
       setShowCancelModal(false);
       setShowSuccessModal(true);
     }
   };
 
   const handlePostponeClick = (appt) => {
-    if (appt.status === 'NEW') {
+    if (appt.status === 'NEW' || appt.status === 'SENT') {
       setSelectedAppointment(appt);
+      setCancelReason("");
       setShowPostponeModal(true);
     }
   };
 
   const confirmPostpone = () => {
     if (selectedAppointment) {
-      console.log(selectedAppointment.hospitalName)
-      console.log(selectedAppointment.doctorId)
-      console.log(selectedAppointment.departmentId)
-      cancelAppointment(selectedAppointment.id);
+      const reason = cancelReason || "ต้องการเลื่อนนัดหมาย";
+      cancelAppointment(selectedAppointment.id, reason);
       setShowPostponeModal(false);
       navigate("/queue3", {
         state: {
@@ -386,6 +387,15 @@ function handleLogout(){
               </div>
             </div>
           )}
+          <div className="mb-3">
+            <textarea
+              className="form-control"
+              rows="3"
+              placeholder="ระบุเหตุผลที่ยกเลิก (ถ้ามี)"
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+            ></textarea>
+          </div>
           <div className="d-flex justify-content-center gap-2">
             <Button variant="secondary" onClick={() => setShowCancelModal(false)} className="rounded-pill px-4">กลับ</Button>
             <Button variant="danger" onClick={confirmCancel} className="rounded-pill px-4">ยืนยันยกเลิก</Button>
@@ -403,6 +413,15 @@ function handleLogout(){
           </div>
           <p className="text-dark fw-medium">ระบบจะทำการ <span className="text-danger">ยกเลิกนัดหมายเดิม (สถานะรอตรวจสอบ)</span> <br /> และพาคุณไปเลือกวันนัดหมายใหม่</p>
           <p className="text-muted small">คุณต้องการดำเนินการต่อหรือไม่?</p>
+          <div className="mb-3 text-start mx-auto" style={{ maxWidth: '380px' }}>
+            <textarea
+              className="form-control"
+              rows="2"
+              placeholder="เหตุผลที่เลื่อนนัด เช่น ไม่สะดวกไปวันนี้"
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+            ></textarea>
+          </div>
           <div className="d-flex justify-content-center gap-2 mt-4">
             <Button variant="secondary" onClick={() => setShowPostponeModal(false)} className="rounded-pill px-4">ยกเลิก</Button>
             <Button variant="primary" onClick={confirmPostpone} className="rounded-pill px-4" style={{ backgroundColor: '#001E6C' }}>ไปเลือกวันใหม่</Button>
