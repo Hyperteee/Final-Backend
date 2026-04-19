@@ -38,7 +38,9 @@ const AdminNavbar = () => {
                         {currentUser?.name ? `${currentUser.name} ${currentUser.lastname || ''}`.trim() : (currentUser?.role || (currentUser?.role_id === 1 ? 'super_admin' : (currentUser?.role_id === 2 ? 'admin' : 'Guest')))}
                     </h5>
                     <small className='text-primary'>
-                        {currentUser?.adminScope === "all" ? "ดูแลทั้งระบบ" : (currentUser?.adminScope || "ไม่มีสิทธิ์เข้าถึง")}
+                        {currentUser?.adminScope === "all" || currentUser?.role_id === 1 || currentUser?.role?.toLowerCase() === "superadmin" || currentUser?.role?.toLowerCase() === "super_admin" 
+                            ? "ดูแลทั้งระบบ" 
+                            : (currentUser?.adminScope || "ไม่มีสิทธิ์เข้าถึง")}
                     </small>
                 </div>
             </div>

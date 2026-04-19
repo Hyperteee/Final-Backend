@@ -100,8 +100,21 @@ export default function Register2() {
       const data = await response.json();
 
       if (response.ok || response.status === 201) {
-        alert("สมัครสมาชิกสำเร็จ! กรุณารอแอดมินอนุมัติ");
-        navigate("/login");
+        // ส่ง OTP ไปที่อีเมล
+        try {
+          await fetch("http://localhost:3000/mail/send-otp-email", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ email: formData.email }),
+          });
+        } catch (otpError) {
+          console.error("Error sending OTP during registration:", otpError);
+        }
+
+        alert("สมัครสมาชิกขั้นต้นสำเร็จ! กรุณายืนยันรหัส OTP ในขั้นตอนถัดไป");
+        navigate("/otpverify", { state: { email: formData.email, fromRegister: true } });
       } else {
         alert("ไม่สามารถสมัครได้: " + (data.message || "เกิดข้อผิดพลาด"));
       }

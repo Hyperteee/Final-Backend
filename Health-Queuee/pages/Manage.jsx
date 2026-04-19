@@ -7,8 +7,6 @@ import {
 import "./Export.css"; 
 import hospitalMap from "../src/data/hospitaldata.jsx/allhospitaldata";
 
-import { useTranslation } from "react-i18next";
-
 
 function TabButton({ id, activeTab, onClick, icon: Icon, label }) {
   const isActive = activeTab === id;
@@ -27,48 +25,7 @@ function TabButton({ id, activeTab, onClick, icon: Icon, label }) {
   );
 }
 
-function HospitalCard({ data, onClick, deptCount, docCount }) {
-  return (
-    <div className="col-md-4 mb-4">
-      <div 
-        className="card border-0 h-100 shadow-sm hospital-card-modern" 
-        onClick={() => onClick(data)}
-        style={{ cursor: "pointer" }}
-      >
-        <div className="card-top-accent" />
-        
-        <div className="card-body p-4">
-          <div className="d-flex justify-content-between align-items-start mb-3">
-            <div className="icon-box-modern shadow-sm">
-              <Building2 size={28} className="text-white" />
-            </div>
-            <span className="badge bg-light text-muted border rounded-pill px-3">ID: {data.id}</span>
-          </div>
 
-          <h5 className="fw-bold text-dark mb-1 text-truncate">{data.name}</h5>
-          <p className="text-muted small mb-4 d-flex align-items-center gap-1">
-            <MapPin size={14}/> {data.state}
-          </p>
-
-          <div className="d-flex gap-2 mt-auto">
-            <div className="stat-pill">
-              <span className="fw-bold text-primary">{deptCount}</span> <span className="small text-muted">แผนก</span>
-            </div>
-            <div className="stat-pill">
-              <span className="fw-bold text-success">{docCount}</span> <span className="small text-muted">แพทย์</span>
-            </div>
-          </div>
-        </div>
-        
-        <div className="card-footer bg-white border-0 p-3 pt-0 text-end">
-          <button className="btn btn-link text-decoration-none p-0 text-primary small fw-bold">
-            จัดการข้อมูล <ChevronRight size={16} />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function EmptyState({ title, subtitle }) {
   return (
@@ -128,6 +85,20 @@ function DataModal({ isOpen, onClose, mode, type, initialData, onSave, departmen
             {type === 'DOCTOR' && (
                 <>
                     <div className="mb-4">
+                        <label className="form-label fw-bold small text-uppercase text-muted">คำนำหน้า <span className="text-danger">*</span></label>
+                        <select 
+                          className="form-select shadow-none" 
+                          value={formData.prefix || "นพ."} 
+                          onChange={e => setFormData({...formData, prefix: e.target.value})}
+                          required
+                        >
+                            <option value="นพ.">นพ.</option>
+                            <option value="พญ.">พญ.</option>
+                            <option value="ดร.">ดร.</option>
+                            <option value="ทพ.">ทพ.</option>
+                        </select>
+                    </div>
+                    <div className="mb-4">
                         <label className="form-label fw-bold small text-uppercase text-muted">ความเชี่ยวชาญ</label>
                         <input 
                           className="form-control shadow-none" 
@@ -179,98 +150,188 @@ export default function AdminDataManagement() {
   const [hospitals, setHospitals] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [doctors, setDoctors] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Modal Control
   const [modalConfig, setModalConfig] = useState({ isOpen: false, mode: 'ADD', type: 'DEPT', data: null });
 
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [hResp, dResp, drResp] = await Promise.all([
+        fetch("http://localhost:3000/data/getHospital"),
+        fetch("http://localhost:3000/data/getSpecialties"),
+        fetch("http://localhost:3000/data/getDoctors")
+      ]);
+
+      const hData = await hResp.json();
+      const dData = await dResp.json();
+      const drData = await drResp.json();
+
+      // Transform data
+      setHospitals(hData.hospitals.map(h => ({ 
+        ...h, 
+        id: h.hospital_id, // Frontend uses hospital_id (e.g. BKK001) as the logical ID
+        dbId: h.id 
+      })));
+
+      // Specialties are the master list of departments
+      setDepartments(dData.specialties || []);
+
+      setDoctors(drData.doctors.map(dr => ({
+        ...dr,
+        id: dr.id.toString(),
+        name: `${dr.first_name} ${dr.last_name}`.trim(),
+        prefix: dr.prefix || 'นพ.',
+        hospitalId: dr.hospital_id,
+        departmentId: dr.specialty_id ? dr.specialty_id.toString() : null,
+        departmentName: dr.specialty_name || "ไม่ระบุ"
+      })));
+
+    } catch (error) {
+      console.error("Fetch Error:", error);
+      alert("ไม่สามารถโหลดข้อมูลจากเซิร์ฟเวอร์ได้");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadedHospitals = [];
-    const loadedDepts = [];
-    const loadedDoctors = [];
-
-    Object.values(hospitalMap).forEach(h => {
-      const info = h.info;
-      loadedHospitals.push({ ...info });
-
-      if (info.departments) {
-        info.departments.forEach(d => {
-          loadedDepts.push({ ...d, hospitalId: info.id });
-          if (d.doctors) {
-            d.doctors.forEach(dr => {
-              loadedDoctors.push({ ...dr, departmentId: d.id, departmentName: d.name, hospitalId: info.id });
-            });
-          }
-        });
-      }
-    });
-
-    setHospitals(loadedHospitals);
-    setDepartments(loadedDepts);
-    setDoctors(loadedDoctors);
+    fetchData();
   }, []);
 
   // --- Filter Logic ---
+  const filteredHospitals = useMemo(() => {
+    let data = hospitals;
+    if (searchTerm && view === "LIST") {
+      data = data.filter(h => 
+        h.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        h.id.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    return data;
+  }, [hospitals, searchTerm, view]);
+
   const currentDepts = useMemo(() => {
-    let data = departments.filter(d => d.hospitalId === selectedHospital?.id);
+    if (!selectedHospital) return [];
+    // Get unique specialties associated with doctors in this hospital
+    const hospitalDoctors = doctors.filter(dr => dr.hospitalId === selectedHospital.id);
+    const activeSpecialtyIds = [...new Set(hospitalDoctors.map(dr => dr.specialty_id))];
+    
+    let data = departments.filter(s => activeSpecialtyIds.includes(s.id));
     if (searchTerm) data = data.filter(d => d.name.toLowerCase().includes(searchTerm.toLowerCase()));
     return data;
-  }, [departments, selectedHospital, searchTerm]);
+  }, [departments, doctors, selectedHospital, searchTerm]);
 
   const currentDoctors = useMemo(() => {
-    let data = doctors.filter(d => d.hospitalId === selectedHospital?.id);
-    if (searchTerm) data = data.filter(d => d.name.toLowerCase().includes(searchTerm.toLowerCase()) || d.specialization.toLowerCase().includes(searchTerm.toLowerCase()));
+    if (!selectedHospital) return [];
+    let data = doctors.filter(dr => dr.hospitalId === selectedHospital.id);
+    if (searchTerm) {
+      const lowerSearch = searchTerm.toLowerCase();
+      data = data.filter(dr => 
+        `${dr.first_name} ${dr.last_name}`.toLowerCase().includes(lowerSearch) || 
+        (dr.specialization && dr.specialization.toLowerCase().includes(lowerSearch))
+      );
+    }
     return data;
   }, [doctors, selectedHospital, searchTerm]);
 
   // --- Handlers ---
 
-  function handleSaveHospitalInfo(e) {
+  async function handleSaveHospitalInfo(e) {
     e.preventDefault();
-    setHospitals(prev => prev.map(h => h.id === selectedHospital.id ? selectedHospital : h));
-    alert("✅ บันทึกข้อมูลโรงพยาบาลเรียบร้อย (จำลอง)");
-  }
-
-  function handleModalSave(formData) {
-    const { mode, type } = modalConfig;
-    
-    if (type === 'DEPT') {
-        if (mode === 'ADD') {
-            // เพิ่มแผนก
-            setDepartments([...departments, { ...formData, id: `NEW-D-${Date.now()}`, hospitalId: selectedHospital.id }]);
-        } else {
-            // แก้ไขแผนก
-            setDepartments(departments.map(d => d.id === formData.id ? formData : d));
-            
-            // 🔥 Cascade Update: อัปเดตชื่อแผนกที่ติดตัวหมอไปด้วย
-            setDoctors(prevDoctors => prevDoctors.map(doc => {
-                if (String(doc.departmentId) === String(formData.id)) {
-                    return { ...doc, departmentName: formData.name };
-                }
-                return doc;
-            }));
-        }
-    } else if (type === 'DOCTOR') {
-        // หาชื่อแผนก
-        const deptName = departments.find(d => String(d.id) === String(formData.departmentId))?.name || "";
-        const newItem = { 
-            ...formData, 
-            departmentName: deptName, // ใส่ชื่อแผนกให้ถูกต้อง
-            hospitalId: selectedHospital.id 
-        };
-        
-        if (mode === 'ADD') {
-            setDoctors([...doctors, { ...newItem, id: `NEW-DR-${Date.now()}` }]);
-        } else {
-            setDoctors(doctors.map(d => d.id === formData.id ? newItem : d));
-        }
+    try {
+      const response = await fetch(`http://localhost:3000/data/hospitals/${selectedHospital.dbId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(selectedHospital)
+      });
+      if (response.ok) {
+        alert("✅ บันทึกข้อมูลโรงพยาบาลเรียบร้อย");
+        fetchData();
+      }
+    } catch (error) {
+       alert("❌ เกิดข้อผิดพลาดในการบันทึก");
     }
-    setModalConfig({ ...modalConfig, isOpen: false });
   }
 
-  function handleDelete(type, id) {
-      if(!window.confirm("ยืนยันการลบข้อมูลนี้?")) return;
-      if (type === 'DEPT') setDepartments(departments.filter(d => d.id !== id));
-      if (type === 'DOCTOR') setDoctors(doctors.filter(d => d.id !== id));
+  async function handleModalSave(formData) {
+    const { mode, type } = modalConfig;
+    let url = "";
+    let method = "POST";
+    let bodyData = {};
+
+    try {
+      if (type === 'DEPT') {
+        url = mode === 'ADD' ? "http://localhost:3000/data/specialties" : `http://localhost:3000/data/specialties/${formData.id}`;
+        method = mode === 'ADD' ? 'POST' : 'PUT';
+        bodyData = { name: formData.name };
+      } else if (type === 'DOCTOR') {
+        url = mode === 'ADD' ? "http://localhost:3000/data/doctors" : `http://localhost:3000/data/doctors/${formData.id}`;
+        method = mode === 'ADD' ? 'POST' : 'PUT';
+        
+        // Handle name splitting for first/last name
+        const nameParts = formData.name ? formData.name.trim().split(/\s+/) : ["", ""];
+        const firstName = nameParts[0] || "";
+        const lastName = nameParts.slice(1).join(" ") || "";
+
+        bodyData = {
+          hospital_id: selectedHospital.id,
+          specialty_id: parseInt(formData.departmentId),
+          specialization: formData.specialization,
+          prefix: formData.prefix || "นพ.", 
+          first_name: firstName,
+          last_name: lastName
+        };
+      }
+
+      const response = await fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bodyData)
+      });
+
+      if (response.ok) {
+        alert("✅ บันทึกข้อมูลเรียบร้อย");
+        setModalConfig({ ...modalConfig, isOpen: false });
+        fetchData();
+      } else {
+        const err = await response.json();
+        alert(`❌ ผิดพลาด: ${err.message || 'ไม่ทราบสาเหตุ'}`);
+      }
+    } catch (error) {
+      console.error("Save Error:", error);
+      alert("❌ เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
+    }
+  }
+
+  async function handleDelete(type, id) {
+    if(!window.confirm("ยืนยันการลบข้อมูลนี้?")) return;
+    try {
+      const url = type === 'DEPT' ? `http://localhost:3000/data/specialties/${id}` : `http://localhost:3000/data/doctors/${id}`;
+      const response = await fetch(url, { method: 'DELETE' });
+      if (response.ok) {
+        alert("✅ ลบข้อมูลสำเร็จ");
+        fetchData();
+      } else {
+        alert("❌ ไม่สามารถลบข้อมูลได้");
+      }
+    } catch (error) {
+      alert("❌ เกิดข้อผิดพลาดในการเชื่อมต่อ");
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
+        <div className="text-center">
+          <div className="spinner-border text-primary mb-3" role="status" style={{ width: '3rem', height: '3rem' }}>
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <h5 className="text-muted fw-bold">กำลังโหลดข้อมูล...</h5>
+        </div>
+      </div>
+    );
   }
 
   if (view === "LIST") {
@@ -281,20 +342,82 @@ export default function AdminDataManagement() {
           <p className="text-muted">เลือกโรงพยาบาลเพื่อแก้ไขรายละเอียด, แผนก, หรือรายชื่อแพทย์</p>
         </div>
         
-        <div className="row">
-          {hospitals.map(h => {
-             const dCount = departments.filter(d => d.hospitalId === h.id).length;
-             const drCount = doctors.filter(dr => dr.hospitalId === h.id).length;
-             return (
-                <HospitalCard 
-                  key={h.id} 
-                  data={h} 
-                  deptCount={dCount}
-                  docCount={drCount}
-                  onClick={(hosp) => { setSelectedHospital(hosp); setView("DETAIL"); setActiveTab("INFO"); setSearchTerm(""); }} 
-                />
-             )
-          })}
+        <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
+          <div className="table-responsive">
+            <table className="table table-hover align-middle mb-0 custom-admin-table">
+              <thead className="bg-light">
+                <tr>
+                  <th className="ps-4 py-3">ID โรงพยาบาล</th>
+                  <th className="py-3">ชื่อโรงพยาบาล</th>
+                  <th className="py-3">จังหวัด / เขต</th>
+                  <th className="py-3 text-center">แผนก</th>
+                  <th className="py-3 text-center">แพทย์</th>
+                  <th className="py-3 text-end pe-4">จัดการ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredHospitals.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="text-center py-5">
+                      <div className="text-muted">
+                        <Building2 size={48} className="mb-3 opacity-25" />
+                        <p className="mb-0">ไม่พบข้อมูลโรงพยาบาล</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredHospitals.map(h => {
+                    // Stats logic: count unique specialty IDs from doctors in this hospital
+                    const hospitalDoctors = doctors.filter(dr => dr.hospitalId === h.id);
+                    const dCount = [...new Set(hospitalDoctors.map(dr => dr.specialty_id))].filter(id => id).length;
+                    const drCount = hospitalDoctors.length;
+                    return (
+                      <tr 
+                        key={h.id} 
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => { 
+                          setSelectedHospital(h); 
+                          setView("DETAIL"); 
+                          setActiveTab("INFO"); 
+                          setSearchTerm(""); 
+                        }}
+                      >
+                        <td className="ps-4">
+                          <span className="badge bg-light text-primary border rounded-pill px-3">
+                            {h.id}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="fw-bold text-dark">{h.name}</div>
+                        </td>
+                        <td>
+                          <div className="text-muted small">
+                            <MapPin size={12} className="me-1" />
+                            {h.state || '-'}{h.district ? `, ${h.district}` : ''}
+                          </div>
+                        </td>
+                        <td className="text-center">
+                          <span className="badge bg-blue-light text-primary rounded-pill px-3">
+                            {dCount}
+                          </span>
+                        </td>
+                        <td className="text-center">
+                          <span className="badge bg-green-light text-success rounded-pill px-3">
+                            {drCount}
+                          </span>
+                        </td>
+                        <td className="text-end pe-4">
+                          <button className="btn btn-sm btn-light rounded-circle shadow-sm">
+                            <ChevronRight size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     );
@@ -323,19 +446,20 @@ export default function AdminDataManagement() {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div className="d-flex align-items-center gap-3 mb-4">
+        {/* Navigation Tabs (Now on the left) */}
         <div className="bg-light p-1 rounded-pill d-inline-flex gap-1 border">
           <TabButton id="INFO" activeTab={activeTab} onClick={setActiveTab} icon={Building2} label="ข้อมูลทั่วไป" />
           <TabButton id="DEPT" activeTab={activeTab} onClick={setActiveTab} icon={MapPin} label="แผนก" />
           <TabButton id="DOCTOR" activeTab={activeTab} onClick={setActiveTab} icon={Stethoscope} label="แพทย์" />
         </div>
 
-        {/* Search Bar (Show only on DEPT/DOCTOR) */}
+        {/* Search Bar (Now right next to tabs, show only on DEPT/DOCTOR) */}
         {activeTab !== "INFO" && (
            <div className="position-relative" style={{ width: '250px' }}>
               <SearchIcon size={16} className="text-muted position-absolute top-50 start-0 translate-middle-y ms-3" />
               <input 
-                className="form-control ps-5 rounded-pill bg-white" 
+                className="form-control ps-5 rounded-pill bg-white shadow-sm" 
                 placeholder="ค้นหา..." 
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
@@ -469,7 +593,7 @@ export default function AdminDataManagement() {
                               <User size={20} className="text-primary" />
                             </div>
                             <div>
-                              <h6 className="fw-bold text-dark mb-0">{doc.name}</h6>
+                              <h6 className="fw-bold text-dark mb-0">{doc.prefix} {doc.name}</h6>
                               <div className="d-flex align-items-center gap-2">
                                 <small className="text-muted">{doc.specialization}</small>
                                 <span className="badge bg-light text-dark border px-2 py-0 rounded-pill" style={{fontSize: '0.7rem'}}>
@@ -512,7 +636,7 @@ export default function AdminDataManagement() {
         type={modalConfig.type}
         initialData={modalConfig.data}
         onSave={handleModalSave}
-        departments={departments.filter(d => d.hospitalId === selectedHospital.id)}
+        departments={departments}
       />
 
     </div>

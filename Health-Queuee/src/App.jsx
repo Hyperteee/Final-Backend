@@ -24,6 +24,7 @@ import AdminTracking from "../pages/Tracking";
 import AdminDataManagement from "../pages/Manage";
 import AdminPatients from "../pages/ManagePatients";
 import Register2 from "./Login-Pages/register2";
+import OTPVerify from "./login-Pages/otpverify";
 import ProfileHistory from "./Profile-User/Profile-History";
 import ProfilePrivacy from "./Profile-User/Profile-Privacy";
 import DoctorList from "./Doctor-List/Doctor-List";
@@ -56,6 +57,7 @@ function App() {
           <Route>
             <Route path="/login" element={<Login2 />} />
             <Route path="/register" element={<Register2 />} />
+            <Route path="/otpverify" element={<OTPVerify />} />
           </Route>
 
             <Route element={<Adminlayout />}>

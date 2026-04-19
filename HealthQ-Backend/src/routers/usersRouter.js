@@ -346,6 +346,27 @@ userRouter.delete("/:id", async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /users/profile/{id}:
+ *   get:
+ *     summary: Get user profile by ID
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The user ID
+ *     responses:
+ *       200:
+ *         description: User profile data
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Server error
+ */
 // --- Get User Profile Route ---
 // เพิ่ม route สำหรับดึงข้อมูลโปรไฟล์
 userRouter.get("/profile/:id", async (req, res) => {
@@ -362,6 +383,40 @@ userRouter.get("/profile/:id", async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /users/profile/{id}:
+ *   put:
+ *     summary: Update user profile
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The user ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title: { type: string }
+ *               name: { type: string }
+ *               lastname: { type: string }
+ *               gender: { type: string }
+ *               identificationNumber: { type: string }
+ *               phone: { type: string }
+ *               birthDate: { type: string, format: date }
+ *               nationality: { type: string }
+ *     responses:
+ *       200:
+ *         description: User profile updated successfully
+ *       500:
+ *         description: Server error
+ */
 // --- Update User Profile Route ---
 // เพิ่ม route สำหรับอัปเดตข้อมูลโปรไฟล์ (เมื่อกดบันทึกในหน้าข้อมูลส่วนตัว)
 userRouter.put("/profile/:id", async (req, res) => {

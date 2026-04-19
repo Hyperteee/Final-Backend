@@ -115,7 +115,24 @@ export default function Login2() {
               </div>
 
               <div
-                className="d-flex flex-column justify-content-center align-items-center h-100 px-5"
+                className="position-absolute"
+                style={{
+                  top: 0,
+                  right: 0,
+                  width: "150%",
+                  height: "150%",
+                  opacity: 0.1,
+                }}
+              >
+                <svg viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="200" cy="200" r="300" fill="white" />
+                  <circle cx="600" cy="100" r="200" fill="white" />
+                  <circle cx="100" cy="600" r="250" fill="white" />
+                </svg>
+              </div>
+
+              <div
+                className="d-flex flex-column justify-content-center align-items-center h-100 px-5 position-relative"
                 style={{ marginTop: "-50px" }}
               >
                 <div className="w-100" style={{ maxWidth: 400 }}>

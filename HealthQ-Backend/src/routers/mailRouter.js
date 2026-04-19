@@ -65,4 +65,141 @@ mailRouter.post("/send-email", async (req, res) => {
     }
 });
 
+const otpStore = {};
+
+function generateOtp() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+/**
+ * @swagger
+ * /mail/send-otp-email:
+ *   post:
+ *     summary: Send an OTP email notification
+ *     tags: [Mail]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email: { type: string, format: email, description: "Recipient email address for OTP" }
+ *     responses:
+ *       200:
+ *         description: OTP sent successfully
+ *       400:
+ *         description: Email is required
+ *       500:
+ *         description: Send OTP failed
+ */
+mailRouter.post("/send-otp-email", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const otp = generateOtp();
+
+    otpStore[email] = {
+      otp,
+      expiresAt: Date.now() + 5 * 60 * 1000,
+    };
+
+    const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+            user: process.env.SMTP_MAIL,
+            pass: process.env.SMTP_PASS,
+        },
+    });
+
+    await transporter.sendMail({
+      from: `"HealthQ" <${process.env.SMTP_MAIL}>`,
+      to: email,
+      subject: "Your OTP Code",
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+            <div style="text-align: center; padding-bottom: 20px;">
+              <h2>Welcome to HFU!</h2>
+            </div>
+            <p>Hello,</p>
+            <p>Your One-Time Password (OTP) for verification is:</p>
+            <div style="margin: 20px 0; font-size: 24px; font-weight: bold; color: #4F46E5; text-align: center;">
+              ${otp}
+            </div>
+            <p>Please enter this code to complete your verification.</p>
+            <p><strong>Note:</strong> This OTP is valid for 5 minutes.</p>
+            <p>If you did not request this OTP, please ignore this email.</p>
+            <br />
+            <p>Best regards,<br/>The HFU Team</p>
+        </div>
+      `
+    });
+
+    return res.json({ message: "OTP sent successfully" });
+
+  } catch (error) {
+    return res.status(500).json({
+      message: "Send OTP failed",
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /mail/verify-otp:
+ *   post:
+ *     summary: Verify an OTP
+ *     tags: [Mail]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - otp
+ *             properties:
+ *               email: { type: string, format: email, description: "Recipient email address for OTP" }
+ *               otp: { type: string, description: "OTP provided by the user" }
+ *     responses:
+ *       200:
+ *         description: OTP verified successfully
+ *       400:
+ *         description: OTP validation errors (expired, invalid, missing)
+ */
+mailRouter.post("/verify-otp", async (req, res) => {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+        return res.status(400).json({ message: "Email and OTP are required" });
+    }
+
+    const storedData = otpStore[email];
+
+    if (!storedData) {
+        return res.status(400).json({ message: "No OTP found for this email or it has expired" });
+    }
+
+    if (Date.now() > storedData.expiresAt) {
+        delete otpStore[email]; // clean up
+        return res.status(400).json({ message: "OTP has expired" });
+    }
+
+    if (storedData.otp !== otp.toString()) {
+        return res.status(400).json({ message: "Invalid OTP" });
+    }
+
+    // OTP is valid
+    delete otpStore[email]; // Clear OTP after successful use
+    return res.status(200).json({ message: "OTP verified successfully" });
+});
+
 export default mailRouter;
